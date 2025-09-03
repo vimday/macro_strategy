@@ -11,19 +11,27 @@ import (
 
 // BacktestService handles backtest-related business logic
 type BacktestService struct {
-	dataManager    *data.DataSourceManager
-	backtestEngine *backtesting.BacktestEngine
-	resultCache    map[string]*models.BacktestResult
-	cacheMutex     sync.RWMutex
+	dataManager          *data.DataSourceManager
+	backtestEngine       *backtesting.BacktestEngine
+	multiStrategyService *MultiStrategyService
+	resultCache          map[string]*models.BacktestResult
+	multiResultCache     map[string]*models.MultiStrategyBacktestResult
+	cacheMutex           sync.RWMutex
 }
 
 // NewBacktestService creates a new backtest service
 func NewBacktestService(dataManager *data.DataSourceManager, backtestEngine *backtesting.BacktestEngine) *BacktestService {
-	return &BacktestService{
-		dataManager:    dataManager,
-		backtestEngine: backtestEngine,
-		resultCache:    make(map[string]*models.BacktestResult),
+	bs := &BacktestService{
+		dataManager:      dataManager,
+		backtestEngine:   backtestEngine,
+		resultCache:      make(map[string]*models.BacktestResult),
+		multiResultCache: make(map[string]*models.MultiStrategyBacktestResult),
 	}
+
+	// Initialize multi-strategy service
+	bs.multiStrategyService = NewMultiStrategyService(backtestEngine, dataManager)
+
+	return bs
 }
 
 // GetMarketData retrieves market data for a given index and date range
@@ -200,4 +208,128 @@ func (bs *BacktestService) validateMonthlyRotationStrategy(strategy models.Strat
 	}
 
 	return nil
+}
+
+// RunMultiStrategyBacktest executes multiple strategies and compares results
+func (bs *BacktestService) RunMultiStrategyBacktest(request models.MultiStrategyBacktestRequest) (*models.MultiStrategyBacktestResult, error) {
+	// Run the multi-strategy backtest
+	result, err := bs.multiStrategyService.RunMultiStrategyBacktest(request)
+	if err != nil {
+		return nil, fmt.Errorf("multi-strategy backtest execution failed: %w", err)
+	}
+
+	// Cache the result
+	bs.cacheMutex.Lock()
+	bs.multiResultCache[result.ID] = result
+	bs.cacheMutex.Unlock()
+
+	return result, nil
+}
+
+// GetMultiStrategyResult retrieves a multi-strategy backtest result by ID
+func (bs *BacktestService) GetMultiStrategyResult(backtestID string) (*models.MultiStrategyBacktestResult, error) {
+	bs.cacheMutex.RLock()
+	result, exists := bs.multiResultCache[backtestID]
+	bs.cacheMutex.RUnlock()
+
+	if !exists {
+		return nil, nil // Not found, but not an error
+	}
+
+	return result, nil
+}
+
+// GetSupportedStrategies returns a list of supported strategy types with their parameters
+func (bs *BacktestService) GetSupportedStrategies() map[string]interface{} {
+	return map[string]interface{}{
+		"monthly_rotation": map[string]interface{}{
+			"name":        "Monthly Rotation Strategy",
+			"description": "Buy before month-end, sell after month-start",
+			"parameters": map[string]interface{}{
+				"buy_days_before_month_end": map[string]interface{}{
+					"type":        "integer",
+					"default":     1,
+					"range":       []int{1, 20},
+					"description": "Number of days before month-end to buy",
+				},
+				"sell_days_after_month_start": map[string]interface{}{
+					"type":        "integer",
+					"default":     1,
+					"range":       []int{1, 20},
+					"description": "Number of days after month-start to sell",
+				},
+			},
+		},
+		"buy_and_hold": map[string]interface{}{
+			"name":        "Buy and Hold Strategy",
+			"description": "Buy and hold with optional rebalancing",
+			"parameters": map[string]interface{}{
+				"target_allocation": map[string]interface{}{
+					"type":        "float",
+					"default":     1.0,
+					"range":       []float64{0.1, 1.0},
+					"description": "Target allocation percentage (0.1 = 10%, 1.0 = 100%)",
+				},
+				"rebalance_frequency": map[string]interface{}{
+					"type":        "string",
+					"default":     "never",
+					"options":     []string{"never", "monthly", "quarterly", "yearly"},
+					"description": "How often to rebalance the portfolio",
+				},
+				"dividend_reinvest": map[string]interface{}{
+					"type":        "boolean",
+					"default":     false,
+					"description": "Whether to reinvest dividends (future feature)",
+				},
+			},
+		},
+	}
+}
+
+// GetSupportedMarkets returns a list of supported markets with their assets
+func (bs *BacktestService) GetSupportedMarkets() map[string]interface{} {
+	return map[string]interface{}{
+		"a_share_index": map[string]interface{}{
+			"name":        "A-Share Indexes",
+			"description": "Chinese stock market indexes",
+			"assets":      models.GetIndexesByMarketType(models.MarketTypeAShareIndex),
+			"data_source": "AKShare",
+		},
+		"a_share_stock": map[string]interface{}{
+			"name":        "A-Share Individual Stocks",
+			"description": "Chinese individual stocks",
+			"assets":      models.GetIndexesByMarketType(models.MarketTypeAShareStock),
+			"data_source": "AKShare",
+		},
+		"us_index": map[string]interface{}{
+			"name":        "US Market Indexes",
+			"description": "US stock market indexes and ETFs",
+			"assets":      models.GetIndexesByMarketType(models.MarketTypeUSIndex),
+			"data_source": "Yahoo Finance",
+		},
+		"us_stock": map[string]interface{}{
+			"name":        "US Individual Stocks",
+			"description": "US individual stocks",
+			"assets":      models.GetIndexesByMarketType(models.MarketTypeUSStock),
+			"data_source": "Yahoo Finance",
+		},
+		"crypto": map[string]interface{}{
+			"name":        "Cryptocurrency",
+			"description": "Digital currencies and tokens",
+			"assets":      models.GetIndexesByMarketType(models.MarketTypeCrypto),
+			"data_source": "Binance",
+		},
+		"hk_index": map[string]interface{}{
+			"name":        "Hong Kong Indexes",
+			"description": "Hong Kong stock market indexes",
+			"assets":      models.GetIndexesByMarketType(models.MarketTypeHKIndex),
+			"data_source": "Yahoo Finance",
+		},
+		"hk_stock": map[string]interface{}{
+			"name":        "Hong Kong Stocks",
+			"description": "Hong Kong individual stocks",
+			"assets":      models.GetIndexesByMarketType(models.MarketTypeHKStock),
+			"data_source": "Yahoo Finance",
+		},
+	}
 }

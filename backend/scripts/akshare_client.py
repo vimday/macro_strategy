@@ -63,6 +63,55 @@ def get_stock_zh_a_hist(symbol, start_date, end_date):
         print(json.dumps(error_data, ensure_ascii=False))
         sys.exit(1)
 
+def get_stock_zh_index_daily(symbol, start_date, end_date):
+    """
+    获取 A 股指数历史数据
+    
+    Args:
+        symbol: 指数代码（如：sh000300）
+        start_date: 开始日期（格式：20200101）
+        end_date: 结束日期（格式：20231231）
+    
+    Returns:
+        JSON 格式的历史数据
+    """
+    try:
+        # 调用 AKShare 获取数据 - 使用更新的API
+        df = ak.stock_zh_index_daily(symbol=symbol)
+        
+        # 过滤日期范围
+        if not df.empty:
+            df['date'] = pd.to_datetime(df['date'])
+            start_dt = datetime.strptime(start_date, '%Y%m%d')
+            end_dt = datetime.strptime(end_date, '%Y%m%d')
+            df = df[(df['date'] >= start_dt) & (df['date'] <= end_dt)]
+        
+        # 重命名列以便 Go 代码解析
+        df = df.rename(columns={
+            'date': '日期',
+            'open': '开盘',
+            'high': '最高', 
+            'low': '最低',
+            'close': '收盘',
+            'volume': '成交量'
+        })
+        
+        # 确保日期格式正确
+        if '日期' in df.columns:
+            df['日期'] = df['日期'].dt.strftime('%Y-%m-%d')
+        
+        # 转换为字典列表
+        data = df.to_dict('records')
+        
+        # 输出 JSON
+        print(json.dumps(data, ensure_ascii=False, default=str))
+        
+    except Exception as e:
+        # 输出错误信息
+        error_data = {"error": str(e)}
+        print(json.dumps(error_data, ensure_ascii=False))
+        sys.exit(1)
+
 def get_stock_info(symbol):
     """
     获取股票基本信息
@@ -121,6 +170,16 @@ def main():
         start_date = sys.argv[3]
         end_date = sys.argv[4]
         get_stock_zh_a_hist(symbol, start_date, end_date)
+        
+    elif command == "get_stock_zh_index_daily":
+        if len(sys.argv) != 5:
+            print(json.dumps({"error": "参数不正确：需要 symbol, start_date, end_date"}, ensure_ascii=False))
+            sys.exit(1)
+        
+        symbol = sys.argv[2]
+        start_date = sys.argv[3]
+        end_date = sys.argv[4]
+        get_stock_zh_index_daily(symbol, start_date, end_date)
         
     elif command == "get_stock_info":
         if len(sys.argv) != 3:

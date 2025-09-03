@@ -6,36 +6,52 @@ import "time"
 type MarketType string
 
 const (
-	MarketTypeAShare MarketType = "a_share"
-	MarketTypeCrypto MarketType = "crypto"
-	MarketTypeHKUS   MarketType = "hk_us"
-	MarketTypeETF    MarketType = "etf"
-	MarketTypeBond   MarketType = "bond"
-	MarketTypeFuture MarketType = "future"
-	MarketTypeOption MarketType = "option"
+	MarketTypeAShareIndex MarketType = "a_share_index" // A股指数
+	MarketTypeAShareStock MarketType = "a_share_stock" // A股个股
+	MarketTypeUSIndex     MarketType = "us_index"      // 美股指数
+	MarketTypeUSStock     MarketType = "us_stock"      // 美股个股
+	MarketTypeCrypto      MarketType = "crypto"        // 数字货币
+	MarketTypeHKIndex     MarketType = "hk_index"      // 港股指数
+	MarketTypeHKStock     MarketType = "hk_stock"      // 港股个股
+	MarketTypeETF         MarketType = "etf"           // ETF基金
+	MarketTypeBond        MarketType = "bond"          // 债券
+	MarketTypeFuture      MarketType = "future"        // 期货
+	MarketTypeOption      MarketType = "option"        // 期权
+	MarketTypeCommodity   MarketType = "commodity"     // 大宗商品
 )
 
 // AssetClass represents different asset classes
 type AssetClass string
 
 const (
-	AssetClassEquity     AssetClass = "equity"
-	AssetClassCrypto     AssetClass = "crypto"
-	AssetClassCommodity  AssetClass = "commodity"
-	AssetClassBond       AssetClass = "bond"
-	AssetClassDerivative AssetClass = "derivative"
-	AssetClassIndex      AssetClass = "index"
+	AssetClassEquity     AssetClass = "equity"     // 股票
+	AssetClassIndex      AssetClass = "index"      // 指数
+	AssetClassCrypto     AssetClass = "crypto"     // 数字货币
+	AssetClassETF        AssetClass = "etf"        // ETF基金
+	AssetClassCommodity  AssetClass = "commodity"  // 大宗商品
+	AssetClassBond       AssetClass = "bond"       // 债券
+	AssetClassDerivative AssetClass = "derivative" // 衍生品
+	AssetClassREITs      AssetClass = "reits"      // 房地产信托基金
 )
 
 // Currency represents different currencies
 type Currency string
 
 const (
-	CurrencyCNY Currency = "CNY"
-	CurrencyUSD Currency = "USD"
-	CurrencyHKD Currency = "HKD"
-	CurrencyBTC Currency = "BTC"
-	CurrencyETH Currency = "ETH"
+	// 法定货币
+	CurrencyCNY Currency = "CNY" // 人民币
+	CurrencyUSD Currency = "USD" // 美元
+	CurrencyHKD Currency = "HKD" // 港币
+	CurrencyEUR Currency = "EUR" // 欧元
+	CurrencyJPY Currency = "JPY" // 日元
+	CurrencyGBP Currency = "GBP" // 英镑
+	// 数字货币
+	CurrencyBTC  Currency = "BTC"  // 比特币
+	CurrencyETH  Currency = "ETH"  // 以太坊
+	CurrencyUSDT Currency = "USDT" // 泰达币
+	CurrencyBNB  Currency = "BNB"  // 币安币
+	CurrencyADA  Currency = "ADA"  // 艾达币
+	CurrencySOL  Currency = "SOL"  // Solana
 )
 
 // Index represents a market index or tradable asset
@@ -88,11 +104,27 @@ type MarketData struct {
 type StrategyType string
 
 const (
-	StrategyTypeMonthlyRotation StrategyType = "monthly_rotation"
-	StrategyTypeBuyAndHold      StrategyType = "buy_and_hold"
-	StrategyTypeGridTrading     StrategyType = "grid_trading"
-	StrategyTypeMeanReversion   StrategyType = "mean_reversion"
-	StrategyTypeMomentum        StrategyType = "momentum"
+	// 基础策略
+	StrategyTypeMonthlyRotation StrategyType = "monthly_rotation" // 月末轮动策略
+	StrategyTypeBuyAndHold      StrategyType = "buy_and_hold"     // 买入持有策略
+	// 技术策略
+	StrategyTypeGridTrading   StrategyType = "grid_trading"   // 网格交易策略
+	StrategyTypeMeanReversion StrategyType = "mean_reversion" // 均值回归策略
+	StrategyTypeMomentum      StrategyType = "momentum"       // 动量策略
+	StrategyTypeBreakout      StrategyType = "breakout"       // 突破策略
+	// 高频策略
+	StrategyTypeDCA       StrategyType = "dca"       // 定投策略 (Dollar Cost Averaging)
+	StrategyTypeRebalance StrategyType = "rebalance" // 再平衡策略
+	StrategyTypePairs     StrategyType = "pairs"     // 配对交易策略
+	StrategyTypeArbitrage StrategyType = "arbitrage" // 套利策略
+	// 多因子策略
+	StrategyTypeMultiFactor StrategyType = "multi_factor" // 多因子策略
+	StrategyTypePortfolio   StrategyType = "portfolio"    // 组合策略
+	StrategyTypeRiskParity  StrategyType = "risk_parity"  // 风险平价策略
+	StrategyTypeMinVariance StrategyType = "min_variance" // 最小方差策略
+	// 机器学习策略
+	StrategyTypeML            StrategyType = "ml"            // 机器学习策略
+	StrategyTypeReinforcement StrategyType = "reinforcement" // 强化学习策略
 	// Future strategy types can be added here
 )
 
@@ -119,6 +151,38 @@ type RiskManagementConfig struct {
 type MonthlyRotationParams struct {
 	BuyDaysBeforeMonthEnd   int `json:"buy_days_before_month_end"`
 	SellDaysAfterMonthStart int `json:"sell_days_after_month_start"`
+}
+
+// BuyAndHoldParams represents parameters for buy and hold strategy
+type BuyAndHoldParams struct {
+	RebalanceFrequency string  `json:"rebalance_frequency,omitempty"` // "monthly", "quarterly", "yearly", "never"
+	DividendReinvest   bool    `json:"dividend_reinvest,omitempty"`   // 股息再投资
+	TargetAllocation   float64 `json:"target_allocation,omitempty"`   // 目标仓位比例
+}
+
+// GridTradingParams represents parameters for grid trading strategy
+type GridTradingParams struct {
+	GridCount    int     `json:"grid_count"`    // 网格数量
+	GridSpacing  float64 `json:"grid_spacing"`  // 网格间距(百分比)
+	BasePrice    float64 `json:"base_price"`    // 基准价格
+	MaxPosition  float64 `json:"max_position"`  // 最大仓位
+	ProfitTarget float64 `json:"profit_target"` // 止盈目标
+}
+
+// MomentumParams represents parameters for momentum strategy
+type MomentumParams struct {
+	LookbackPeriod    int     `json:"lookback_period"`    // 回望周期
+	MomentumThreshold float64 `json:"momentum_threshold"` // 动量阈值
+	HoldingPeriod     int     `json:"holding_period"`     // 持有周期
+	RebalanceFreq     string  `json:"rebalance_freq"`     // 再平衡频率
+}
+
+// DCAParams represents parameters for Dollar Cost Averaging strategy
+type DCAParams struct {
+	InvestmentAmount float64 `json:"investment_amount"` // 每次投资金额
+	Frequency        string  `json:"frequency"`         // 投资频率: "daily", "weekly", "monthly"
+	DurationMonths   int     `json:"duration_months"`   // 投资期限(月)
+	StartDelay       int     `json:"start_delay"`       // 开始延迟(天)
 }
 
 // BacktestRequest represents a backtest request with enhanced configuration
@@ -199,10 +263,57 @@ type DailyReturn struct {
 
 // DataSourceConfig represents data source configuration
 type DataSourceConfig struct {
-	Provider   string                 `json:"provider"`
-	APIKey     string                 `json:"api_key,omitempty"`
-	BaseURL    string                 `json:"base_url,omitempty"`
-	Parameters map[string]interface{} `json:"parameters,omitempty"`
+	Type      string                 `json:"type"` // "akshare", "yahoo", "binance", "mock"
+	APIKey    string                 `json:"api_key,omitempty"`
+	APISecret string                 `json:"api_secret,omitempty"`
+	BaseURL   string                 `json:"base_url,omitempty"`
+	RateLimit int                    `json:"rate_limit,omitempty"`
+	Timeout   int                    `json:"timeout,omitempty"`
+	Metadata  map[string]interface{} `json:"metadata,omitempty"`
+}
+
+// MultiStrategyBacktestRequest represents a request to compare multiple strategies
+type MultiStrategyBacktestRequest struct {
+	AssetID       string                 `json:"asset_id"`
+	Strategies    []StrategyConfig       `json:"strategies"` // 多个策略配置
+	StartDate     time.Time              `json:"start_date"`
+	EndDate       time.Time              `json:"end_date"`
+	InitialCash   float64                `json:"initial_cash"`
+	Benchmark     string                 `json:"benchmark,omitempty"`      // 基准指数
+	DataSource    string                 `json:"data_source,omitempty"`    // 数据源
+	ComparisonOpt *ComparisonOptions     `json:"comparison_opt,omitempty"` // 对比选项
+	Metadata      map[string]interface{} `json:"metadata,omitempty"`
+}
+
+// ComparisonOptions represents options for strategy comparison
+type ComparisonOptions struct {
+	ShowBenchmark      bool     `json:"show_benchmark"`       // 显示基准
+	NormalizeReturns   bool     `json:"normalize_returns"`    // 归一化收益
+	ShowDrawdown       bool     `json:"show_drawdown"`        // 显示回撤
+	ShowRollingMetrics bool     `json:"show_rolling_metrics"` // 显示滚动指标
+	RollingWindow      int      `json:"rolling_window"`       // 滚动窗口
+	Metrics            []string `json:"metrics"`              // 需要对比的指标
+}
+
+// MultiStrategyBacktestResult represents the result of multiple strategy comparison
+type MultiStrategyBacktestResult struct {
+	ID              string                       `json:"id"`
+	Request         MultiStrategyBacktestRequest `json:"request"`
+	Results         []BacktestResult             `json:"results"`                    // 各策略结果
+	Comparison      *StrategyComparison          `json:"comparison"`                 // 对比结果
+	BenchmarkResult *BacktestResult              `json:"benchmark_result,omitempty"` // 基准结果
+	CreatedAt       time.Time                    `json:"created_at"`
+	Duration        time.Duration                `json:"duration"`
+}
+
+// StrategyComparison represents comparison results between strategies
+type StrategyComparison struct {
+	MetricsComparison map[string][]float64 `json:"metrics_comparison"` // 指标对比
+	Rankings          map[string][]int     `json:"rankings"`           // 排名
+	CorrelationMatrix [][]float64          `json:"correlation_matrix"` // 相关性矩阵
+	BestStrategy      string               `json:"best_strategy"`      // 最佳策略
+	WorstStrategy     string               `json:"worst_strategy"`     // 最差策略
+	Summary           string               `json:"summary"`            // 对比总结
 }
 
 // ErrorResponse represents API error response

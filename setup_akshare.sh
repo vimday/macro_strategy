@@ -1,31 +1,59 @@
 #!/bin/bash
-# Setup AKShare environment for Macro Strategy Platform
 
-echo "Setting up AKShare environment..."
+# Setup script for AKShare Python environment
 
-# Create virtual environment if it doesn't exist
-if [ ! -d "venv" ]; then
-    echo "Creating Python virtual environment..."
-    python3 -m venv venv
+echo "🚀 Setting up AKShare environment..."
+
+# Check if Python3 is available
+if ! command -v python3 &> /dev/null; then
+    echo "❌ Python3 not found. Please install Python3 first."
+    exit 1
 fi
 
-# Activate virtual environment and install dependencies
-echo "Installing Python dependencies..."
-source venv/bin/activate
-pip install --upgrade pip
-pip install akshare pandas
+echo "✅ Python3 found"
+
+# Check if pip is available
+if ! command -v pip3 &> /dev/null; then
+    echo "❌ pip3 not found. Please install pip3 first."
+    exit 1
+fi
+
+echo "✅ pip3 found"
+
+# Create virtual environment
+echo "🔧 Creating virtual environment..."
+python3 -m venv akshare_env
+
+# Activate virtual environment
+echo "🔧 Activating virtual environment..."
+source akshare_env/bin/activate
+
+# Upgrade pip
+echo "🔧 Upgrading pip..."
+pip3 install --upgrade pip
+
+# Install AKShare
+echo "🔧 Installing AKShare..."
+pip3 install akshare
 
 # Test AKShare installation
-echo "Testing AKShare installation..."
-python3 -c "import akshare as ak; print('AKShare version:', ak.__version__)"
+echo "🧪 Testing AKShare installation..."
+python3 -c "import akshare; print('✅ AKShare version:', akshare.__version__)"
 
-# Test the AKShare client script
-echo "Testing AKShare client script..."
-python3 backend/scripts/akshare_client.py get_stock_zh_a_hist sh000300 20240101 20240105 | head -n 1
+# Test the akshare_client.py script
+echo "🧪 Testing akshare_client.py script..."
+cd backend/scripts
+python3 akshare_client.py get_index_list > /dev/null 2>&1
 
-echo "AKShare setup completed successfully!"
-echo "The backend is now configured to use real AKShare data for A-share indexes."
+if [ $? -eq 0 ]; then
+    echo "✅ akshare_client.py works correctly"
+else
+    echo "❌ akshare_client.py has issues"
+fi
+
+cd ../..
+
+echo "🎉 AKShare setup complete!"
 echo ""
-echo "To start the application:"
-echo "1. Backend: cd backend && go run cmd/main.go"
-echo "2. Frontend: cd frontend && npm run dev"
+echo "To use AKShare in the future, activate the virtual environment with:"
+echo "source akshare_env/bin/activate"

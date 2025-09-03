@@ -18,11 +18,35 @@ type DataSourceManager struct {
 	providers map[models.MarketType]DataProvider
 }
 
-// NewDataSourceManager creates a new data source manager
+// NewDataSourceManager creates a new data source manager with all providers registered
 func NewDataSourceManager() *DataSourceManager {
-	return &DataSourceManager{
+	dsm := &DataSourceManager{
 		providers: make(map[models.MarketType]DataProvider),
 	}
+
+	// Register A-share providers
+	// Use the virtual environment Python path (relative to backend directory)
+	akshareProvider := NewAKShareProvider("../akshare_env/bin/python3", "../backend/scripts/akshare_client.py")
+	dsm.RegisterProvider(models.MarketTypeAShareIndex, akshareProvider)
+	dsm.RegisterProvider(models.MarketTypeAShareStock, akshareProvider)
+
+	// Register US market provider
+	yahooProvider := NewYahooProvider()
+	dsm.RegisterProvider(models.MarketTypeUSIndex, yahooProvider)
+	dsm.RegisterProvider(models.MarketTypeUSStock, yahooProvider)
+
+	// Register crypto provider
+	binanceProvider := NewBinanceProvider()
+	dsm.RegisterProvider(models.MarketTypeCrypto, binanceProvider)
+
+	// Register HK market provider (also using Yahoo)
+	dsm.RegisterProvider(models.MarketTypeHKIndex, yahooProvider)
+	dsm.RegisterProvider(models.MarketTypeHKStock, yahooProvider)
+
+	// Register ETF provider (Yahoo can handle most ETFs)
+	dsm.RegisterProvider(models.MarketTypeETF, yahooProvider)
+
+	return dsm
 }
 
 // RegisterProvider registers a data provider for a specific market type

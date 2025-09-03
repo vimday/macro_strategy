@@ -3,7 +3,6 @@ package api
 import (
 	"macro_strategy/internal/backtesting"
 	"macro_strategy/internal/data"
-	"macro_strategy/internal/models"
 	"macro_strategy/internal/services"
 
 	"github.com/gin-contrib/cors"
@@ -23,16 +22,7 @@ func SetupRouter() *gin.Engine {
 	router.Use(cors.New(config))
 
 	// Initialize services
-	dataManager := data.NewDataSourceManager()
-	// Use AKShare provider for real A-share data
-	venvPython := "../venv/bin/python3"
-	akshareProvider := data.NewAKShareProvider(venvPython, "./scripts/akshare_client.py")
-	dataManager.RegisterProvider(models.MarketTypeAShare, akshareProvider)
-
-	// Register mock provider for other markets (crypto, HK/US) - can be replaced with real providers later
-	mockProvider := data.NewMockDataProvider()
-	dataManager.RegisterProvider(models.MarketTypeCrypto, mockProvider)
-	dataManager.RegisterProvider(models.MarketTypeHKUS, mockProvider)
+	dataManager := data.NewDataSourceManager() // This now auto-registers all providers
 
 	backtestEngine := backtesting.NewBacktestEngine()
 	backtestService := services.NewBacktestService(dataManager, backtestEngine)
@@ -46,14 +36,27 @@ func SetupRouter() *gin.Engine {
 		// Health check
 		v1.GET("/health", handlers.HealthCheck)
 
-		// Index endpoints
+		// Asset and market endpoints
+		v1.GET("/assets", handlers.GetAssets) // Updated: renamed from indexes
+		v1.GET("/assets/market/:market_type", handlers.GetAssetsByMarketType)
+		v1.GET("/assets/data/:id", handlers.GetAssetData)
+		v1.GET("/markets", handlers.GetSupportedMarkets) // New: get all supported markets
+
+		// Strategy endpoints
+		v1.GET("/strategies", handlers.GetSupportedStrategies) // New: get all supported strategies
+
+		// Single strategy backtest endpoints
+		v1.POST("/backtest", handlers.RunBacktest)
+		v1.GET("/backtest/:id", handlers.GetBacktestResult)
+
+		// Multi-strategy comparison endpoints
+		v1.POST("/backtest/multi", handlers.RunMultiStrategyBacktest)  // New: multi-strategy comparison
+		v1.GET("/backtest/multi/:id", handlers.GetMultiStrategyResult) // New: get multi-strategy results
+
+		// Backward compatibility - keep old index endpoints
 		v1.GET("/indexes", handlers.GetIndexes)
 		v1.GET("/indexes/market/:market_type", handlers.GetIndexesByMarketType)
 		v1.GET("/indexes/data/:id", handlers.GetIndexData)
-
-		// Backtest endpoints
-		v1.POST("/backtest", handlers.RunBacktest)
-		v1.GET("/backtest/:id", handlers.GetBacktestResult)
 	}
 
 	return router

@@ -92,6 +92,8 @@ func (be *BacktestEngine) executeStrategy(request models.BacktestRequest, data [
 	switch request.Strategy.Type {
 	case models.StrategyTypeMonthlyRotation:
 		return be.executeMonthlyRotationStrategy(request, data)
+	case models.StrategyTypeBuyAndHold:
+		return be.executeBuyAndHoldStrategy(request, data)
 	default:
 		return nil, nil, fmt.Errorf("unsupported strategy type: %s", request.Strategy.Type)
 	}
@@ -342,4 +344,209 @@ func (be *BacktestEngine) calculateDrawdown(dailyReturns []models.DailyReturn) {
 // generateBacktestID generates a unique ID for the backtest
 func generateBacktestID() string {
 	return fmt.Sprintf("bt_%d", time.Now().UnixNano())
+}
+
+// executeBuyAndHoldStrategy executes buy and hold strategy
+func (be *BacktestEngine) executeBuyAndHoldStrategy(request models.BacktestRequest, data []models.OHLCV) ([]models.Trade, []models.DailyReturn, error) {
+	// Parse strategy parameters
+	params, err := be.parseBuyAndHoldParams(request.Strategy.Parameters)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	var trades []models.Trade
+	var dailyReturns []models.DailyReturn
+
+	cash := request.InitialCash
+	position := models.Position{}
+	initialPurchase := false
+	lastRebalanceMonth := -1
+
+	// Store initial portfolio value for calculations
+	initialPortfolioValue := request.InitialCash
+
+	for i, dataPoint := range data {
+		currentDate := dataPoint.Date
+		currentPrice := dataPoint.Close
+
+		// Initial purchase on first day
+		if !initialPurchase {
+			quantity := math.Floor((cash * params.TargetAllocation) / currentPrice)
+			if quantity > 0 {
+				amount := quantity * currentPrice
+				commission := amount * be.commissionRate
+				totalCost := amount + commission
+
+				if totalCost <= cash {
+					trade := models.Trade{
+						Date:       currentDate,
+						Action:     "buy",
+						Price:      currentPrice,
+						Quantity:   quantity,
+						Amount:     amount,
+						Commission: commission,
+					}
+					trades = append(trades, trade)
+
+					cash -= totalCost
+					position.Quantity = quantity
+					position.AvgPrice = currentPrice
+					initialPurchase = true
+				}
+			}
+		}
+
+		// Check for rebalancing
+		if params.RebalanceFrequency != "never" && params.RebalanceFrequency != "" {
+			if be.shouldRebalance(currentDate, params.RebalanceFrequency, &lastRebalanceMonth) {
+				// Simple rebalancing: maintain target allocation
+				currentPortfolioValue := cash + (position.Quantity * currentPrice)
+				targetPositionValue := currentPortfolioValue * params.TargetAllocation
+				currentPositionValue := position.Quantity * currentPrice
+
+				// If position value differs significantly from target, rebalance
+				if math.Abs(currentPositionValue-targetPositionValue) > currentPortfolioValue*0.05 { // 5% threshold
+					if currentPositionValue > targetPositionValue {
+						// Sell excess
+						excessValue := currentPositionValue - targetPositionValue
+						excessQuantity := math.Floor(excessValue / currentPrice)
+						if excessQuantity > 0 && excessQuantity <= position.Quantity {
+							amount := excessQuantity * currentPrice
+							commission := amount * be.commissionRate
+							netAmount := amount - commission
+
+							trade := models.Trade{
+								Date:       currentDate,
+								Action:     "sell",
+								Price:      currentPrice,
+								Quantity:   excessQuantity,
+								Amount:     amount,
+								Commission: commission,
+							}
+							trades = append(trades, trade)
+
+							cash += netAmount
+							position.Quantity -= excessQuantity
+						}
+					} else {
+						// Buy more
+						deficitValue := targetPositionValue - currentPositionValue
+						additionalQuantity := math.Floor(deficitValue / currentPrice)
+						if additionalQuantity > 0 {
+							amount := additionalQuantity * currentPrice
+							commission := amount * be.commissionRate
+							totalCost := amount + commission
+
+							if totalCost <= cash {
+								trade := models.Trade{
+									Date:       currentDate,
+									Action:     "buy",
+									Price:      currentPrice,
+									Quantity:   additionalQuantity,
+									Amount:     amount,
+									Commission: commission,
+								}
+								trades = append(trades, trade)
+
+								cash -= totalCost
+								position.Quantity += additionalQuantity
+								// Update average price
+								position.AvgPrice = ((position.AvgPrice * (position.Quantity - additionalQuantity)) + (currentPrice * additionalQuantity)) / position.Quantity
+							}
+						}
+					}
+				}
+			}
+		}
+
+		// Update position market value if holding
+		if position.Quantity > 0 {
+			position.MarketValue = position.Quantity * currentPrice
+			position.UnrealizedPL = position.MarketValue - (position.Quantity * position.AvgPrice)
+		}
+
+		// Calculate daily portfolio value
+		portfolioValue := cash + position.MarketValue
+		dailyReturn := 0.0
+		cumulativeReturn := (portfolioValue - initialPortfolioValue) / initialPortfolioValue
+
+		// Calculate daily return correctly: only after first day
+		if i > 0 {
+			prevValue := dailyReturns[i-1].PortfolioValue
+			if prevValue > 0 {
+				dailyReturn = (portfolioValue - prevValue) / prevValue
+			}
+		}
+
+		dailyReturns = append(dailyReturns, models.DailyReturn{
+			Date:             currentDate,
+			PortfolioValue:   portfolioValue,
+			DailyReturn:      dailyReturn,
+			CumulativeReturn: cumulativeReturn,
+			Cash:             cash,
+			Position:         position,
+		})
+	}
+
+	// Calculate drawdown for each day
+	be.calculateDrawdown(dailyReturns)
+
+	return trades, dailyReturns, nil
+}
+
+// parseBuyAndHoldParams parses buy and hold strategy parameters
+func (be *BacktestEngine) parseBuyAndHoldParams(parameters map[string]interface{}) (*models.BuyAndHoldParams, error) {
+	params := &models.BuyAndHoldParams{
+		RebalanceFrequency: "never",
+		DividendReinvest:   false,
+		TargetAllocation:   1.0, // 100% allocation by default
+	}
+
+	if rebalanceFreq, ok := parameters["rebalance_frequency"]; ok {
+		if freq, ok := rebalanceFreq.(string); ok {
+			params.RebalanceFrequency = freq
+		}
+	}
+
+	if dividendReinvest, ok := parameters["dividend_reinvest"]; ok {
+		if reinvest, ok := dividendReinvest.(bool); ok {
+			params.DividendReinvest = reinvest
+		}
+	}
+
+	if targetAllocation, ok := parameters["target_allocation"]; ok {
+		if allocation, ok := targetAllocation.(float64); ok {
+			if allocation > 0 && allocation <= 1.0 {
+				params.TargetAllocation = allocation
+			}
+		}
+	}
+
+	return params, nil
+}
+
+// shouldRebalance determines if rebalancing should occur
+func (be *BacktestEngine) shouldRebalance(currentDate time.Time, frequency string, lastRebalanceMonth *int) bool {
+	currentMonth := int(currentDate.Month())
+	currentYear := currentDate.Year()
+
+	switch frequency {
+	case "monthly":
+		if *lastRebalanceMonth != currentMonth {
+			*lastRebalanceMonth = currentMonth
+			return true
+		}
+	case "quarterly":
+		if currentMonth%3 == 1 && *lastRebalanceMonth != currentMonth { // January, April, July, October
+			*lastRebalanceMonth = currentMonth
+			return true
+		}
+	case "yearly":
+		if currentMonth == 1 && *lastRebalanceMonth != currentYear*12+currentMonth {
+			*lastRebalanceMonth = currentYear*12 + currentMonth
+			return true
+		}
+	}
+
+	return false
 }

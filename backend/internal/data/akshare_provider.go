@@ -39,8 +39,11 @@ func (a *AKShareProvider) GetHistoricalData(symbol string, startDate, endDate ti
 	startDateStr := startDate.Format("20060102")
 	endDateStr := endDate.Format("20060102")
 
+	// Determine the appropriate AKShare command based on symbol type
+	command := a.getAKShareCommand(symbol)
+
 	// Call Python script with AKShare
-	cmd := exec.Command(a.pythonPath, a.scriptPath, "get_stock_zh_a_hist",
+	cmd := exec.Command(a.pythonPath, a.scriptPath, command,
 		akSymbol, startDateStr, endDateStr)
 
 	output, err := cmd.Output()
@@ -118,6 +121,55 @@ func (a *AKShareProvider) IsValidSymbol(symbol string) bool {
 
 	// Check if exchange is valid
 	return exchange == "SH" || exchange == "SZ"
+}
+
+// getAKShareCommand determines the appropriate AKShare command based on symbol type
+func (a *AKShareProvider) getAKShareCommand(symbol string) string {
+	if !a.IsValidSymbol(symbol) {
+		return "get_stock_zh_a_hist" // default
+	}
+
+	parts := strings.Split(symbol, ".")
+	code := parts[0]
+
+	// Determine symbol type based on code prefix
+	// Index codes: 000300, 000016, 000905, etc.
+	// Stock codes: 600xxx (SH), 000xxx (SZ), 002xxx (SZ), 300xxx (SZ)
+	if a.isIndexSymbol(code) {
+		return "get_stock_zh_index_daily" // For indexes
+	}
+
+	return "get_stock_zh_a_hist" // For individual stocks
+}
+
+// isIndexSymbol checks if a code represents an index
+func (a *AKShareProvider) isIndexSymbol(code string) bool {
+	// Common A-share index patterns
+	indexPatterns := []string{
+		"000300", // CSI 300
+		"000016", // SSE 50
+		"000905", // CSI 500
+		"000852", // CSI 1000
+		"000688", // STAR 50
+		"399006", // ChiNext
+		"399330", // SZSE 100
+		"000001", // SSE Composite (if .SH)
+		"399001", // SZSE Composite (if .SZ)
+	}
+
+	for _, pattern := range indexPatterns {
+		if code == pattern {
+			return true
+		}
+	}
+
+	// General index pattern check
+	// Most A-share indexes start with 000, 399
+	if strings.HasPrefix(code, "000") || strings.HasPrefix(code, "399") {
+		return true
+	}
+
+	return false
 }
 
 // convertSymbolForAKShare converts symbol format from "000300.SH" to AKShare format

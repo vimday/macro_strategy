@@ -1,19 +1,31 @@
 # Macro Strategy | 巨策略
 
-🚀 **A comprehensive A-share trading strategy backtesting platform with real market data integration**
+🚀 **A comprehensive multi-market trading strategy backtesting platform with real market data integration**
 
-Built with modern TypeScript frontend and high-performance Go backend, providing professional-grade backtesting capabilities with AKShare real-time data integration and interactive visualization.
+Built with modern TypeScript frontend and high-performance Go backend, providing professional-grade backtesting capabilities with AKShare real-time data integration, multi-market support, and interactive visualization.
 
 ## ✨ Key Features
 
-- 🏛️ **A-Share Focus**: Professional A-share index backtesting with real market data
-- 📊 **Real Data Integration**: AKShare integration for authentic Chinese market data  
+- 🌍 **Multi-Market Support**: A-shares, US stocks, HK stocks, and cryptocurrencies
+- 🏛️ **A-Share Focus**: Professional A-share index and individual stock backtesting
+- 📊 **Real Data Integration**: AKShare, Yahoo Finance, and Binance integrations
 - ⚡ **High Performance**: Go backend with efficient data processing and calculation
-- 🎯 **Monthly Rotation Strategy**: Built-in month-end rotation strategy implementation
-- 📈 **Professional Metrics**: Comprehensive performance analytics (Sharpe ratio, max drawdown, win rate, etc.)
-- 🖥️ **Modern UI**: Next.js 14 + React 18 + Ant Design responsive interface
+- 🎯 **Multiple Strategies**: Buy-and-hold, monthly rotation, and customizable strategies
+- 📈 **Strategy Comparison**: Compare multiple strategies side-by-side
+- 🖥️ **Modern UI**: Next.js 14 + React 18 + Ant Design 5 responsive interface
 - 📱 **Interactive Charts**: ECharts-powered visualization with multiple chart types
 - 🔧 **Easy Setup**: One-command startup with automated environment configuration
+
+## 📋 Recent Fixes and Improvements ✅
+
+### 🐛 **Critical Bug Fixes** (September 4, 2025)
+
+- **Fixed 500 Error**: Resolved AxiosError "Request failed with status code 500" when running backtests
+- **AKShare Integration**: Fixed missing `get_stock_zh_index_daily` function in Python client script
+- **Path Configuration**: Corrected file paths in provider configuration for proper Python virtual environment usage
+- **Accuracy Issues**: Fixed win rate calculation and P&L computation accuracy problems
+
+These fixes ensure the platform now works correctly for all supported markets and strategies.
 
 ## 🏗️ Architecture
 
@@ -21,7 +33,10 @@ Built with modern TypeScript frontend and high-performance Go backend, providing
 
 - **Frontend**: Next.js 14 + React 18 + TypeScript + Ant Design 5
 - **Backend**: Go 1.19 + Gin Framework + Modular Architecture  
-- **Data Source**: AKShare (Python) for real A-share market data
+- **Data Sources**: 
+  - AKShare (Python) for A-share market data
+  - Yahoo Finance API for US/HK market data
+  - Binance API for cryptocurrency data
 - **Charts**: ECharts for interactive data visualization
 - **State Management**: TanStack Query (React Query) for server state
 - **Styling**: Tailwind CSS for utility-first styling
@@ -40,51 +55,64 @@ Built with modern TypeScript frontend and high-performance Go backend, providing
 └─────────────────────┘    └─────────────────────┘    └─────────────────────┘
 ```
 
-## 📈 Supported A-Share Indexes
+## 🌍 Supported Markets and Assets
 
-The platform currently supports the following major Chinese market indexes with real AKShare data:
+The platform now supports multiple global markets with real data integration:
 
-| Index | Name | Symbol | Description |
-|-------|------|--------|--------------|
-| **CSI 300** | 汪深300 | 000300.SH | 中国最具代表性的300只大盘股 |
-| **SSE 50** | 上证50 | 000016.SH | 上海证券市场最具代表性的50只股票 |
-| **CSI 500** | 中证500 | 000905.SH | 中小市值代表性指数 |
-| **CSI 1000** | 中证1000 | 000852.SH | 中小市值股票价格表现 |
-| **STAR 50** | 科创50 | 000688.SH | 科创板最具代表性的50只证券 |
-| **ChiNext** | 创业板指 | 399006.SZ | 创业板市场运行情况 |
-| **SZSE 100** | 深证100 | 399330.SZ | 深圳市场最活跃100只成份股 |
+| Market Type | Assets | Data Source | Description |
+|-------------|--------|-------------|-------------|
+| **A-Share Indexes** | CSI 300, SSE 50, CSI 500, CSI 1000, STAR 50, ChiNext, SZSE 100 | AKShare | Major Chinese market indexes |
+| **A-Share Stocks** | Individual stocks (000858 Wuliangye, 000001 Ping An Bank, etc.) | AKShare | Chinese individual companies |
+| **US Indexes** | S&P 500 ETF (SPY), NASDAQ-100 ETF (QQQ) | Yahoo Finance | Major US market ETFs |
+| **US Stocks** | Apple (AAPL), Microsoft (MSFT), etc. | Yahoo Finance | US individual companies |
+| **Cryptocurrencies** | Bitcoin (BTC), Ethereum (ETH) | Binance | Major digital currencies |
+| **HK Indexes** | Hang Seng Index (HSI) | Yahoo Finance | Hong Kong market indexes |
+| **HK Stocks** | Tencent (00700.HK) | Yahoo Finance | Hong Kong individual companies |
 
 ### Data Features
-- ✅ **Real Market Data**: Direct integration with AKShare for authentic historical data
+- ✅ **Real Market Data**: Direct integration with multiple data providers
 - ✅ **Daily OHLCV**: Complete open, high, low, close, and volume data
 - ✅ **Commission Handling**: Realistic transaction cost calculations
 - ✅ **Date Range Filtering**: Flexible historical period selection
+- ✅ **Multi-Currency Support**: CNY, USD, HKD, BTC, ETH, and more
 
-## 📋 Monthly Rotation Strategy
+## 📋 Multiple Trading Strategies
 
 ### Strategy Implementation
 
-The platform features a fully implemented **Monthly Rotation Strategy** with the following logic:
+The platform features multiple fully implemented trading strategies:
 
 ```
-📅 Month-End Entry:
-   • Buy signal: N days before month-end
-   • Full cash allocation to selected index
-   • Market order execution with commission
+📈 Buy-and-Hold Strategy:
+   • Initial purchase with configurable allocation
+   • Optional periodic rebalancing (monthly, quarterly, yearly)
+   • Simple and effective long-term investing approach
 
-📅 Month-Start Exit:
+📅 Monthly Rotation Strategy:
+   • Buy signal: N days before month-end
+   • Full cash allocation to selected asset
    • Sell signal: M days after month-start  
    • Complete position liquidation
-   • Return to cash until next signal
+   • Repeat cycle for entire backtest period
 
-🔄 Repeat cycle for entire backtest period
+🔄 Future Strategies (Planned):
+   • Grid Trading Strategy
+   • Mean Reversion Strategy
+   • Momentum Strategy
+   • DCA (Dollar Cost Averaging)
+   • Multi-Factor Strategies
 ```
 
-**Configurable Parameters**:
+### Strategy Parameters
+
+**Buy-and-Hold Parameters**:
+- `target_allocation`: Position size as percentage of portfolio (0.1-1.0)
+- `rebalance_frequency`: How often to rebalance ("never", "monthly", "quarterly", "yearly")
+- `dividend_reinvest`: Whether to reinvest dividends (future feature)
+
+**Monthly Rotation Parameters**:
 - `buy_days_before_month_end`: Entry timing (default: 1 day)
 - `sell_days_after_month_start`: Exit timing (default: 1 day)
-- `initial_cash`: Starting capital (default: 1,000,000 CNY)
-- `commission_rate`: Transaction costs (configurable per trade)
 
 ### Example Use Case: CSI 1000 Monthly Rotation
 
@@ -100,27 +128,44 @@ The platform features a fully implemented **Monthly Rotation Strategy** with the
 - ✅ **Sharpe Ratio**: -0.665
 - ✅ **Max Drawdown**: 0.0599%
 
-## 📈 Performance Analytics
+## 🆚 Strategy Comparison and Analysis
 
-The platform provides comprehensive performance metrics with accurate calculations:
+### Multi-Strategy Backtesting
 
-### ✅ **Core Metrics Implemented**
+The platform now supports comparing multiple strategies side-by-side:
+
+```
+📊 Multi-Strategy Features:
+   • Run multiple strategies on the same asset
+   • Compare performance metrics across strategies
+   • Generate correlation matrices between strategies
+   • Rank strategies by various performance criteria
+   • Visualize comparative performance charts
+   • Include benchmark asset for reference
+```
+
+### ✅ **Enhanced Analytics Implemented**
 
 | Category | Metrics | Status | Description |
 |----------|---------|---------|-------------|
 | **Returns** | Total Return, Annualized Return | ✅ Working | Absolute performance calculation |
 | **Risk** | Max Drawdown, Volatility | ✅ Working | Downside risk and volatility measures |
 | **Ratios** | Sharpe Ratio, Sortino Ratio, Calmar Ratio | ✅ Working | Risk-adjusted return ratios |
-| **Trade** | Win Rate, Profit Factor, Trade Count | ✅ **Fixed** | Transaction-level statistics |
+| **Trade** | Win Rate, Profit Factor, Trade Count | ✅ Fixed | Transaction-level statistics |
 | **Advanced** | Max Drawdown Period, Recovery Period | ✅ Working | Temporal risk analysis |
+| **Comparison** | Strategy Rankings, Correlations | ✅ New | Multi-strategy analysis |
 
-### 🔍 **Critical Bug Fixes**
+### 🔍 **Critical Improvements**
 
-**Recent Fixes** (✅ **Completed**):
-- **Trade Pairing Issue**: Fixed Go range loop pointer problem causing incorrect trade matching
-- **Win Rate Calculation**: Corrected from 0% to accurate percentage (e.g., 50%)
-- **P&L Calculation**: Fixed percentage return calculation with proper commission handling
-- **Metrics Display**: All metrics now show correct values in the frontend
+**Recent Enhancements** (✅ **Completed**):
+- **Multi-Market Support**: Added US, HK, and crypto market data providers
+- **Individual Stocks**: Support for A-share and US individual stocks
+- **Multiple Strategies**: Buy-and-hold strategy implementation
+- **Strategy Comparison**: Side-by-side strategy analysis
+- **Enhanced API**: New endpoints for markets, strategies, and multi-backtesting
+- **Trade Pairing Fix**: Corrected Go range loop pointer problem
+- **Win Rate Calculation**: Fixed from 0% to accurate percentage
+- **P&L Calculation**: Fixed percentage return calculation
 
 ### 📊 **Available Chart Types**
 
@@ -129,39 +174,68 @@ The platform provides comprehensive performance metrics with accurate calculatio
 3. **Drawdown Chart**: Monitor risk exposure periods
 4. **Trade Distribution**: Monthly trade frequency analysis
 
-## 📦 API Reference
+## 📦 Enhanced API Reference
 
-### **Implemented Endpoints**
+### **New and Updated Endpoints**
 
 ```bash
 # Health Check
 GET /api/v1/health
 
-# Index Management  
-GET /api/v1/indexes                    # Get all available indexes
-GET /api/v1/indexes/market/:type       # Get indexes by market type
-GET /api/v1/indexes/data/:id           # Get market data for index
+# Asset Management (enhanced from indexes)  
+GET /api/v1/assets                    # Get all available assets
+GET /api/v1/assets/market/:type       # Get assets by market type
+GET /api/v1/assets/data/:id           # Get market data for asset
+GET /api/v1/markets                   # Get all supported markets
 
-# Backtesting
-POST /api/v1/backtest                  # Run backtest
-GET /api/v1/backtest/:id               # Get backtest results
+# Strategy Management
+GET /api/v1/strategies                # Get all supported strategies
+
+# Single Strategy Backtesting
+POST /api/v1/backtest                 # Run single strategy backtest
+GET /api/v1/backtest/:id              # Get backtest results
+
+# Multi-Strategy Comparison (NEW)
+POST /api/v1/backtest/multi           # Run multi-strategy comparison
+GET /api/v1/backtest/multi/:id        # Get multi-strategy results
+
+# Backward Compatibility
+GET /api/v1/indexes                   # Get all indexes (legacy)
+GET /api/v1/indexes/market/:type      # Get indexes by market type (legacy)
+GET /api/v1/indexes/data/:id          # Get market data for index (legacy)
 ```
 
-### **Request Example**
+### **Multi-Strategy Request Example**
 
 ```json
 {
-  "index_id": "csi1000",
-  "strategy": {
-    "type": "monthly_rotation",
-    "parameters": {
-      "buy_days_before_month_end": 1,
-      "sell_days_after_month_start": 1
+  "asset_id": "csi1000",
+  "strategies": [
+    {
+      "type": "buy_and_hold",
+      "parameters": {
+        "target_allocation": 1.0,
+        "rebalance_frequency": "never"
+      }
+    },
+    {
+      "type": "monthly_rotation",
+      "parameters": {
+        "buy_days_before_month_end": 1,
+        "sell_days_after_month_start": 1
+      }
     }
-  },
+  ],
   "start_date": "2024-01-01",
   "end_date": "2024-03-31",
-  "initial_cash": 1000000
+  "initial_cash": 1000000,
+  "benchmark": "csi300",
+  "comparison_opt": {
+    "show_benchmark": true,
+    "normalize_returns": false,
+    "show_drawdown": true,
+    "metrics": ["total_return", "sharpe_ratio", "max_drawdown", "win_rate"]
+  }
 }
 ```
 
@@ -263,28 +337,32 @@ macro_strategy/
 ### ✅ **Completed Features**
 
 - **✅ Backend Infrastructure**
-  - Go + Gin REST API server
-  - Modular architecture with clean separation
+  - Go + Gin REST API server with modular architecture
   - Comprehensive error handling and validation
   - CORS configuration for frontend integration
+  - Multi-market data provider system
 
 - **✅ Data Integration**
-  - AKShare real market data provider
+  - AKShare real market data provider for A-shares
+  - Yahoo Finance API provider for US/HK markets
+  - Binance API provider for cryptocurrency data
   - Mock data provider for testing
   - Unified data model for multiple markets
   - Date range filtering and validation
 
 - **✅ Backtesting Engine**
-  - Monthly rotation strategy implementation
+  - Multiple strategy implementations (Buy-and-Hold, Monthly Rotation)
   - Trade execution with commission calculation
   - Daily portfolio value tracking
   - Position management and cash handling
+  - Multi-strategy comparison capabilities
 
-- **✅ Performance Metrics** (✅ **Bug fixes completed**)
+- **✅ Performance Metrics** 
   - Accurate win rate calculation (fixed pointer issues)
   - Sharpe ratio, Sortino ratio, Calmar ratio
   - Maximum drawdown and recovery periods
   - Trade-level statistics and P&L analysis
+  - Strategy comparison and ranking
 
 - **✅ Frontend Interface**
   - Next.js 14 with React 18 and TypeScript
@@ -292,24 +370,29 @@ macro_strategy/
   - TanStack Query for efficient server state
   - Interactive ECharts for data visualization
   - Responsive design with Tailwind CSS
+  - Multi-strategy configuration UI
 
 - **✅ Development Tools**
   - Automated development environment setup
   - Testing utilities for verification
   - Debug scripts for troubleshooting
+  - Comprehensive API documentation
 
 ### 🔄 **Future Roadmap**
 
 - **🔄 Additional Strategies**
-  - Buy and hold strategy
   - Grid trading strategy
   - Mean reversion strategy
   - Momentum-based strategies
+  - DCA (Dollar Cost Averaging)
+  - Multi-factor strategies
+  - Machine learning strategies
 
 - **🔄 Extended Market Support**
-  - Cryptocurrency data integration (Binance API)
-  - Hong Kong and US equity markets
   - Commodity futures and bond ETFs
+  - More individual stocks and ETFs
+  - Additional cryptocurrency exchanges
+  - Global market expansion (EU, Japan, etc.)
 
 - **🔄 Advanced Features**
   - Strategy portfolio backtesting
@@ -317,6 +400,8 @@ macro_strategy/
   - Real-time signal alerts
   - Strategy optimization tools
   - Multi-timeframe analysis
+  - Dividend and corporate action handling
+  - Advanced visualization dashboards
 
 ## 🔌 **API Reference**
 
@@ -463,3 +548,5 @@ This project is licensed under the MIT License. See [LICENSE](LICENSE) file for 
 - ✅ **总收益率**：0.4965%
 - ✅ **夏普比率**：-0.665
 - ✅ **最大回撤**：0.0599%
+
+```

@@ -199,11 +199,11 @@ func (be *BacktestEngine) calculateTradeMetrics(trades []models.Trade) TradeMetr
 			grossPnL := (currentTrade.Price - buyTrade.Price) * currentTrade.Quantity
 			totalCommission := currentTrade.Commission + buyTrade.Commission
 			netPnL := grossPnL - totalCommission
-			
+
 			// Calculate percentage return based on initial investment
-			initialInvestment := buyTrade.Price * buyTrade.Quantity + buyTrade.Commission
+			initialInvestment := buyTrade.Price*buyTrade.Quantity + buyTrade.Commission
 			percentageReturn := netPnL / initialInvestment
-			
+
 			// Store percentage return for analysis
 			roundTrips = append(roundTrips, percentageReturn)
 			buyTrade = nil
