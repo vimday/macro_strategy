@@ -13,14 +13,14 @@ import (
 // MultiStrategyService handles multi-strategy comparison backtesting
 type MultiStrategyService struct {
 	backtestEngine *backtesting.BacktestEngine
-	dataManager   *data.DataSourceManager
+	dataManager    *data.DataSourceManager
 }
 
 // NewMultiStrategyService creates a new multi-strategy service
 func NewMultiStrategyService(backtestEngine *backtesting.BacktestEngine, dataManager *data.DataSourceManager) *MultiStrategyService {
 	return &MultiStrategyService{
 		backtestEngine: backtestEngine,
-		dataManager:   dataManager,
+		dataManager:    dataManager,
 	}
 }
 
@@ -84,7 +84,7 @@ func (mss *MultiStrategyService) RunMultiStrategyBacktest(request models.MultiSt
 				benchmarkStrategy := models.StrategyConfig{
 					Type: models.StrategyTypeBuyAndHold,
 					Parameters: map[string]interface{}{
-						"target_allocation": 1.0,
+						"target_allocation":   1.0,
 						"rebalance_frequency": "never",
 					},
 					Description: fmt.Sprintf("Benchmark: %s", request.Benchmark),
@@ -180,7 +180,7 @@ func (mss *MultiStrategyService) performStrategyComparison(results []models.Back
 	}
 
 	// Extract metrics for comparison
-	metrics := []string{"total_return", "annualized_return", "sharpe_ratio", "sortino_ratio", 
+	metrics := []string{"total_return", "annualized_return", "sharpe_ratio", "sortino_ratio",
 		"max_drawdown", "volatility", "win_rate", "profit_factor", "calmar_ratio"}
 
 	for _, metric := range metrics {
@@ -387,7 +387,7 @@ func (mss *MultiStrategyService) generateComparisonSummary(results []models.Back
 		maxReturn := mss.max(returns)
 		minReturn := mss.min(returns)
 
-		summary += fmt.Sprintf("📈 Returns: Avg %.2f%%, Range %.2f%% to %.2f%%\n", 
+		summary += fmt.Sprintf("📈 Returns: Avg %.2f%%, Range %.2f%% to %.2f%%\n",
 			avgReturn*100, minReturn*100, maxReturn*100)
 	}
 
