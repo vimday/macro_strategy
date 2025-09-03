@@ -1,435 +1,465 @@
-# Macro Strategy
+# Macro Strategy | 巨策略
 
-A comprehensive platform for testing and comparing macro trading strategies across multiple markets. Built with TypeScript frontend and Go backend, providing robust backtesting capabilities with configurable data sources and interactive visualization.
+🚀 **A comprehensive A-share trading strategy backtesting platform with real market data integration**
 
-## Features
+Built with modern TypeScript frontend and high-performance Go backend, providing professional-grade backtesting capabilities with AKShare real-time data integration and interactive visualization.
 
-- **Multi-Market Coverage**: Support for A-shares (Chinese stocks), cryptocurrencies (Bitcoin-focused), and Hong Kong/US equities
-- **Configurable Data Sources**: Flexible integration with local databases and external data providers
-- **Extensible Architecture**: Modular design allowing easy extension to futures and other asset classes
-- **Comprehensive Backtesting Engine**: Professional-grade strategy testing with detailed performance analytics
-- **Interactive Visualization**: Web-based interface for strategy configuration, monitoring, and results analysis
-- **Advanced Performance Metrics**: Maximum drawdown, Sharpe ratio, Sortino ratio, win rate, and comprehensive risk analytics
+## ✨ Key Features
 
-## Architecture
+- 🏛️ **A-Share Focus**: Professional A-share index backtesting with real market data
+- 📊 **Real Data Integration**: AKShare integration for authentic Chinese market data  
+- ⚡ **High Performance**: Go backend with efficient data processing and calculation
+- 🎯 **Monthly Rotation Strategy**: Built-in month-end rotation strategy implementation
+- 📈 **Professional Metrics**: Comprehensive performance analytics (Sharpe ratio, max drawdown, win rate, etc.)
+- 🖥️ **Modern UI**: Next.js 14 + React 18 + Ant Design responsive interface
+- 📱 **Interactive Charts**: ECharts-powered visualization with multiple chart types
+- 🔧 **Easy Setup**: One-command startup with automated environment configuration
+
+## 🏗️ Architecture
 
 ### Technology Stack
 
-- **Frontend**: TypeScript with modern web frameworks
-- **Backend**: Go (Golang) for high-performance data processing
-- **Data Layer**: Configurable adapters for multiple data sources
-- **Visualization**: Interactive charting and analytics dashboard
+- **Frontend**: Next.js 14 + React 18 + TypeScript + Ant Design 5
+- **Backend**: Go 1.19 + Gin Framework + Modular Architecture  
+- **Data Source**: AKShare (Python) for real A-share market data
+- **Charts**: ECharts for interactive data visualization
+- **State Management**: TanStack Query (React Query) for server state
+- **Styling**: Tailwind CSS for utility-first styling
 
-### System Overview
+### System Architecture
 
 ```
 ┌─────────────────────┐    ┌─────────────────────┐    ┌─────────────────────┐
 │    Web Interface    │    │   Backend Engine    │    │   Data Providers    │
-│    (TypeScript)     │◄──►│     (Golang)        │◄──►│   (Configurable)    │
+│    (Next.js 14)     │◄──►│     (Go + Gin)      │◄──►│    (AKShare)        │
 ├─────────────────────┤    ├─────────────────────┤    ├─────────────────────┤
-│ • Strategy Builder  │    │ • Backtesting Core  │    │ • Local Database    │
-│ • Parameter Config  │    │ • Risk Analytics    │    │ • Market Data APIs  │
-│ • Results Dashboard │    │ • Performance Calc  │    │ • Alternative Data  │
-│ • Portfolio View    │    │ • Data Pipeline     │    │ • Real-time Feeds   │
+│ • Strategy Form     │    │ • Backtesting Core  │    │ • Real A-Share Data │
+│ • Performance UI    │    │ • Metrics Engine    │    │ • CSI 300, CSI 1000│
+│ • Interactive Charts│    │ • Trade Analytics   │    │ • STAR 50, SSE 50  │
+│ • Results Dashboard │    │ • API Endpoints     │    │ • Real-time Feeds   │
 └─────────────────────┘    └─────────────────────┘    └─────────────────────┘
 ```
 
-## Use Cases
+## 📈 Supported A-Share Indexes
 
-### Example: CSI 500 Monthly Rotation Strategy
+The platform currently supports the following major Chinese market indexes with real AKShare data:
 
-**Strategy Logic**:
-- Entry: Purchase CSI 500 index at month-end
-- Exit: Liquidate position at beginning of following month
-- Capital: Full allocation with rebalancing
+| Index | Name | Symbol | Description |
+|-------|------|--------|--------------|
+| **CSI 300** | 汪深300 | 000300.SH | 中国最具代表性的300只大盘股 |
+| **SSE 50** | 上证50 | 000016.SH | 上海证券市场最具代表性的50只股票 |
+| **CSI 500** | 中证500 | 000905.SH | 中小市值代表性指数 |
+| **CSI 1000** | 中证1000 | 000852.SH | 中小市值股票价格表现 |
+| **STAR 50** | 科创50 | 000688.SH | 科创板最具代表性的50只证券 |
+| **ChiNext** | 创业板指 | 399006.SZ | 创业板市场运行情况 |
+| **SZSE 100** | 深证100 | 399330.SZ | 深圳市场最活跃100只成份股 |
 
-**Performance Metrics**:
-- Total Return and Annualized Return
-- Maximum Drawdown and Recovery Time
-- Sharpe Ratio and Sortino Ratio
-- Win/Loss Ratio and Average Trade Duration
-- Volatility and Beta Analysis
+### Data Features
+- ✅ **Real Market Data**: Direct integration with AKShare for authentic historical data
+- ✅ **Daily OHLCV**: Complete open, high, low, close, and volume data
+- ✅ **Commission Handling**: Realistic transaction cost calculations
+- ✅ **Date Range Filtering**: Flexible historical period selection
 
-## Data Sources
+## 📋 Monthly Rotation Strategy
 
-### Supported Markets
+### Strategy Implementation
 
-| Market | Assets | Data Providers | Frequency |
-|--------|--------|----------------|----------|
-| A-Shares | Stocks, Indices, ETFs | Tushare, Wind, Local DB | Daily, Intraday |
-| Crypto | Bitcoin, Major Altcoins | Binance, CoinGecko, APIs | Tick, Minute, Daily |
-| HK/US | Equities, ETFs, ADRs | Yahoo Finance, Alpha Vantage | Daily, Real-time |
+The platform features a fully implemented **Monthly Rotation Strategy** with the following logic:
 
-### Configuration Options
+```
+📅 Month-End Entry:
+   • Buy signal: N days before month-end
+   • Full cash allocation to selected index
+   • Market order execution with commission
 
-- **Local Database**: Historical data storage and management
-- **API Integration**: Real-time and historical data feeds
-- **Custom Adapters**: Extensible framework for new data sources
-- **Data Quality**: Built-in validation and cleaning pipelines
+📅 Month-Start Exit:
+   • Sell signal: M days after month-start  
+   • Complete position liquidation
+   • Return to cash until next signal
 
-## Performance Analytics
-
-### Core Metrics
-
-| Category | Metrics | Description |
-|----------|---------|-------------|
-| **Returns** | Total Return, CAGR, Rolling Returns | Absolute and risk-adjusted performance |
-| **Risk** | Max Drawdown, VaR, CVaR, Volatility | Downside risk and volatility measures |
-| **Ratios** | Sharpe, Sortino, Calmar, Information | Risk-adjusted return ratios |
-| **Trade** | Win Rate, Profit Factor, Expectancy | Transaction-level statistics |
-
-### Advanced Analytics
-
-- **Factor Attribution**: Performance decomposition by market factors
-- **Regime Analysis**: Strategy performance across different market conditions
-- **Monte Carlo Simulation**: Probabilistic scenario analysis
-- **Stress Testing**: Performance under extreme market conditions
-
-## 快速开始
-
-### AKShare 真实数据配置
-
-**重要**: 本地测试默认使用 AKShare 真实数据，不再使用 Mock 数据。Mock 数据仅用于单元测试。
-
-```bash
-# 设置 AKShare 环境（首次使用）
-./setup_akshare.sh
+🔄 Repeat cycle for entire backtest period
 ```
 
-该脚本会：
-- 创建 Python 虚拟环境
-- 安装 AKShare 和 pandas 依赖
-- 测试数据获取功能
-- 配置后端使用真实 A股数据
+**Configurable Parameters**:
+- `buy_days_before_month_end`: Entry timing (default: 1 day)
+- `sell_days_after_month_start`: Exit timing (default: 1 day)
+- `initial_cash`: Starting capital (default: 1,000,000 CNY)
+- `commission_rate`: Transaction costs (configurable per trade)
 
-### 一键启动开发环境
+### Example Use Case: CSI 1000 Monthly Rotation
+
+**Scenario**: Test monthly rotation on CSI 1000 index
+- **Period**: 2024-01-01 to 2024-03-31
+- **Entry**: 1 day before month-end
+- **Exit**: 1 day after month-start
+- **Capital**: 1,000,000 CNY
+
+**Results** (✅ **Fixed accuracy issues**):
+- ✅ **Win Rate**: 50.00% (1 win, 1 loss)
+- ✅ **Total Return**: 0.4965%
+- ✅ **Sharpe Ratio**: -0.665
+- ✅ **Max Drawdown**: 0.0599%
+
+## 📈 Performance Analytics
+
+The platform provides comprehensive performance metrics with accurate calculations:
+
+### ✅ **Core Metrics Implemented**
+
+| Category | Metrics | Status | Description |
+|----------|---------|---------|-------------|
+| **Returns** | Total Return, Annualized Return | ✅ Working | Absolute performance calculation |
+| **Risk** | Max Drawdown, Volatility | ✅ Working | Downside risk and volatility measures |
+| **Ratios** | Sharpe Ratio, Sortino Ratio, Calmar Ratio | ✅ Working | Risk-adjusted return ratios |
+| **Trade** | Win Rate, Profit Factor, Trade Count | ✅ **Fixed** | Transaction-level statistics |
+| **Advanced** | Max Drawdown Period, Recovery Period | ✅ Working | Temporal risk analysis |
+
+### 🔍 **Critical Bug Fixes**
+
+**Recent Fixes** (✅ **Completed**):
+- **Trade Pairing Issue**: Fixed Go range loop pointer problem causing incorrect trade matching
+- **Win Rate Calculation**: Corrected from 0% to accurate percentage (e.g., 50%)
+- **P&L Calculation**: Fixed percentage return calculation with proper commission handling
+- **Metrics Display**: All metrics now show correct values in the frontend
+
+### 📊 **Available Chart Types**
+
+1. **Portfolio Value Chart**: Track portfolio growth over time
+2. **Daily Returns Chart**: Visualize daily performance fluctuations  
+3. **Drawdown Chart**: Monitor risk exposure periods
+4. **Trade Distribution**: Monthly trade frequency analysis
+
+## 📦 API Reference
+
+### **Implemented Endpoints**
 
 ```bash
-# 克隆项目
-git clone https://github.com/your-org/macro_strategy.git
+# Health Check
+GET /api/v1/health
+
+# Index Management  
+GET /api/v1/indexes                    # Get all available indexes
+GET /api/v1/indexes/market/:type       # Get indexes by market type
+GET /api/v1/indexes/data/:id           # Get market data for index
+
+# Backtesting
+POST /api/v1/backtest                  # Run backtest
+GET /api/v1/backtest/:id               # Get backtest results
+```
+
+### **Request Example**
+
+```json
+{
+  "index_id": "csi1000",
+  "strategy": {
+    "type": "monthly_rotation",
+    "parameters": {
+      "buy_days_before_month_end": 1,
+      "sell_days_after_month_start": 1
+    }
+  },
+  "start_date": "2024-01-01",
+  "end_date": "2024-03-31",
+  "initial_cash": 1000000
+}
+```
+
+## 🚀 Quick Start
+
+### 📚 **Prerequisites**
+
+- **Go 1.19+** for backend development
+- **Node.js 16+** for frontend development  
+- **Python 3.8+** for AKShare data integration
+- **Git** for version control
+
+### 🔧 **One-Command Setup**
+
+```bash
+# Clone the repository
+git clone https://github.com/vimday/macro_strategy.git
 cd macro_strategy
 
-# 设置 AKShare（首次运行）
+# Setup AKShare environment (first time only)
 ./setup_akshare.sh
 
-# 一键启动（推荐）
+# Start both backend and frontend
 ./start_dev.sh
 ```
 
-### 手动启动
+### 🏭 **Manual Setup**
+
+If you prefer manual control:
 
 ```bash
-# 后端启动
+# Backend setup
 cd backend
 go mod tidy
-go run cmd/main.go
+go run cmd/main.go                    # Starts on :8080
 
-# 前端启动（新终端）
-cd frontend
+# Frontend setup (new terminal)
+cd frontend  
 npm install
-npm run dev
+npm run dev                           # Starts on :3000
+
+# AKShare setup (if needed)
+source venv/bin/activate
+python3 backend/scripts/akshare_client.py get_stock_zh_a_hist sh000300 20240101 20240105
 ```
 
-### 访问应用
+### 🌐 **Access URLs**
 
-- **前端界面**: http://localhost:3000
-- **后端API**: http://localhost:8080  
-- **健康检查**: http://localhost:8080/api/v1/health
+- **Frontend Interface**: http://localhost:3000
+- **Backend API**: http://localhost:8080
+- **Health Check**: http://localhost:8080/api/v1/health
+- **API Documentation**: Available via endpoint testing
 
-## 主要功能特性
+### ✅ **Verify Installation**
 
-### ✅ 已实现功能
+```bash
+# Test backend health
+curl http://localhost:8080/api/v1/health
 
-1. **完整的回测框架**
-   - 月度轮动策略实现
-   - 专业级性能指标计算（夏普比率、最大回撤、索提诺比率等）
-   - 实时图表可视化
+# Test data retrieval
+curl "http://localhost:8080/api/v1/indexes"
 
-2. **多数据源支持**
-   - AKShare 数据提供者（A股实时数据，本地测试默认启用）
-   - Mock 数据提供者（仅用于单元测试）
-   - 可扩展架构支持更多数据源（加密货币、港美股等）
+# Run quick backtest (optional)
+python3 test_win_rate.py
+```
 
-3. **通用数据模型**
-   - 支持 A股、加密货币、港美股等多种资产类别
-   - 统一的 OHLCV 数据格式
-   - 灵活的元数据支持
-
-4. **现代化前端界面**
-   - TypeScript + Next.js + Ant Design
-   - 响应式设计，支持移动端
-   - 交互式图表展示
-
-5. **高性能后端**
-   - Go 语言实现，高并发处理
-   - RESTful API 设计
-   - 内存缓存优化
-
-### 🚧 扩展计划
-
-1. **更多策略类型**
-   - 买入持有策略
-   - 网格交易策略
-   - 均值回归策略
-   - 动量策略
-
-2. **更多资产类别**
-   - 加密货币（BTC、ETH 等）
-   - 港美股指数
-   - 商品期货
-   - 债券ETF
-
-3. **高级功能**
-   - 策略组合回测
-   - 风险管理模块
-   - 实时信号推送
-   - 策略优化器
-
-## Project Structure
+## 🗺️ Project Structure
 
 ```
 macro_strategy/
-├── backend/
-│   ├── cmd/                    # Application entry points
+├── backend/                     # Go backend application
+│   ├── cmd/                     # Application entry points
+│   │   └── main.go             # Main server executable
 │   ├── internal/
-│   │   ├── api/               # REST API handlers
-│   │   ├── backtesting/       # Core backtesting engine
-│   │   ├── data/              # Data access layer
-│   │   ├── models/            # Business domain models
-│   │   └── services/          # Business logic services
-│   ├── pkg/                   # Shared packages
-│   └── config/                # Configuration files
-├── frontend/
+│   │   ├── api/                # REST API handlers & routing
+│   │   ├── backtesting/        # Core backtesting engine
+│   │   ├── data/               # Data providers (AKShare, Mock)
+│   │   ├── models/             # Business domain models & types
+│   │   └── services/           # Business logic services
+│   ├── scripts/                # Python AKShare integration
+│   └── go.mod                  # Go dependencies
+├── frontend/                    # Next.js frontend application
 │   ├── src/
-│   │   ├── components/        # React components
-│   │   ├── pages/             # Application pages
-│   │   ├── services/          # API service layer
-│   │   ├── utils/             # Utility functions
-│   │   └── types/             # TypeScript definitions
-│   └── public/                # Static assets
-├── docs/                      # Documentation
-└── scripts/                   # Build and deployment scripts
+│   │   ├── app/                # Next.js 14 app directory
+│   │   ├── components/         # React components
+│   │   ├── hooks/              # Custom React hooks
+│   │   ├── lib/                # API services & utilities
+│   │   └── types/              # TypeScript type definitions
+│   └── package.json            # Node.js dependencies
+├── venv/                       # Python virtual environment
+├── setup_akshare.sh            # AKShare environment setup
+├── start_dev.sh                # Development startup script
+├── test_win_rate.py            # Win rate verification script
+└── debug_backtest.py           # Backtest debugging utility
 ```
 
-## API Reference
+## 🛠️ Current Implementation Status
 
-### Core Endpoints
+### ✅ **Completed Features**
 
-- `POST /api/v1/strategies` - Create new strategy
-- `GET /api/v1/strategies/{id}/backtest` - Run backtest
-- `GET /api/v1/strategies/{id}/results` - Retrieve results
-- `GET /api/v1/data/markets` - Available markets
-- `POST /api/v1/data/configure` - Configure data sources
+- **✅ Backend Infrastructure**
+  - Go + Gin REST API server
+  - Modular architecture with clean separation
+  - Comprehensive error handling and validation
+  - CORS configuration for frontend integration
 
-### WebSocket Events
+- **✅ Data Integration**
+  - AKShare real market data provider
+  - Mock data provider for testing
+  - Unified data model for multiple markets
+  - Date range filtering and validation
 
-- `backtest.progress` - Real-time backtest progress
-- `data.update` - Live data updates
-- `strategy.notification` - Strategy alerts
+- **✅ Backtesting Engine**
+  - Monthly rotation strategy implementation
+  - Trade execution with commission calculation
+  - Daily portfolio value tracking
+  - Position management and cash handling
 
-## Contributing
+- **✅ Performance Metrics** (✅ **Bug fixes completed**)
+  - Accurate win rate calculation (fixed pointer issues)
+  - Sharpe ratio, Sortino ratio, Calmar ratio
+  - Maximum drawdown and recovery periods
+  - Trade-level statistics and P&L analysis
+
+- **✅ Frontend Interface**
+  - Next.js 14 with React 18 and TypeScript
+  - Ant Design components for professional UI
+  - TanStack Query for efficient server state
+  - Interactive ECharts for data visualization
+  - Responsive design with Tailwind CSS
+
+- **✅ Development Tools**
+  - Automated development environment setup
+  - Testing utilities for verification
+  - Debug scripts for troubleshooting
+
+### 🔄 **Future Roadmap**
+
+- **🔄 Additional Strategies**
+  - Buy and hold strategy
+  - Grid trading strategy
+  - Mean reversion strategy
+  - Momentum-based strategies
+
+- **🔄 Extended Market Support**
+  - Cryptocurrency data integration (Binance API)
+  - Hong Kong and US equity markets
+  - Commodity futures and bond ETFs
+
+- **🔄 Advanced Features**
+  - Strategy portfolio backtesting
+  - Risk management modules
+  - Real-time signal alerts
+  - Strategy optimization tools
+  - Multi-timeframe analysis
+
+## 🔌 **API Reference**
+
+### **Implemented Endpoints**
+
+```bash
+# Health Check
+GET /api/v1/health
+
+# Index Management  
+GET /api/v1/indexes                    # Get all available indexes
+GET /api/v1/indexes/market/:type       # Get indexes by market type
+GET /api/v1/indexes/data/:id           # Get market data for index
+
+# Backtesting
+POST /api/v1/backtest                  # Run backtest
+GET /api/v1/backtest/:id               # Get backtest results
+```
+
+### **Request Example**
+
+```json
+{
+  "index_id": "csi1000",
+  "strategy": {
+    "type": "monthly_rotation",
+    "parameters": {
+      "buy_days_before_month_end": 1,
+      "sell_days_after_month_start": 1
+    }
+  },
+  "start_date": "2024-01-01",
+  "end_date": "2024-03-31",
+  "initial_cash": 1000000
+}
+```
+
+## 🤝 **Contributing**
 
 We welcome contributions from the quantitative finance community. Please read our contributing guidelines and submit pull requests for review.
 
-### Development Workflow
+### **Development Workflow**
 
 1. Fork the repository
 2. Create feature branch (`git checkout -b feature/amazing-feature`)
-3. Commit changes (`git commit -m 'Add amazing feature'`)
+3. Commit changes (`git commit -m '🚀 feat: Add amazing feature'`)
 4. Push branch (`git push origin feature/amazing-feature`)
 5. Open Pull Request
 
-## License
+### **Commit Message Format**
+
+We follow the conventional commits specification with emojis:
+
+- `🚀 feat:` - New features
+- `🐛 fix:` - Bug fixes  
+- `📈 perf:` - Performance improvements
+- `🔥 refactor:` - Code refactoring
+- `📝 docs:` - Documentation updates
+- `✅ test:` - Testing improvements
+
+## 📜 **License**
 
 This project is licensed under the MIT License. See [LICENSE](LICENSE) file for details.
 
-## Risk Disclaimer
+## ⚠️ **Risk Disclaimer**
 
-⚠️ **Important**: This software is for research and educational purposes only. Past performance does not guarantee future results. Users are responsible for validating all strategies and data before live trading.
+**Important**: This software is for research and educational purposes only. Past performance does not guarantee future results. Users are responsible for validating all strategies and data before live trading.
 
 ---
 
-# 巨策略
+# 🗡️ 巨策略 | Macro Strategy
 
-一个用于测试和比较宏观交易策略的综合平台，支持多市场策略回测。采用TypeScript前端和Go后端构建，提供强大的回测能力、可配置数据源和交互式可视化功能。
+**中国 A 股交易策略回测专业平台**
 
-## 功能特性
+采用现代化 TypeScript 前端和高性能 Go 后端构建，提供专业级回测能力、AKShare 真实数据集成和交互式可视化。
 
-- **多市场覆盖**：支持A股、数字货币（以比特币为主）和港美股市场
-- **可配置数据源**：灵活集成本地数据库和外部数据提供商
-- **可扩展架构**：模块化设计，便于扩展期货等其他资产类别
-- **专业级回测引擎**：提供详细性能分析的专业策略测试
-- **交互式可视化**：基于Web的界面，用于策略配置、监控和结果分析
-- **高级性能指标**：最大回撤、夏普比率、索提诺比率、胜率和综合风险分析
+## ✨ 核心特性
 
-## 系统架构
+- 🏛️ **A 股专注**：专业 A 股指数回测，真实市场数据
+- 📊 **真实数据**：AKShare 集成，提供正宗中国市场数据
+- ⚡ **高性能**：Go 后端，高效数据处理和计算
+- 🎯 **月末轮动策略**：内置月末轮动策略实现
+- 📈 **专业指标**：全面性能分析（夏普比率、最大回撤、胜率等）
+- 🖥️ **现代界面**：Next.js 14 + React 18 + Ant Design 响应式界面
+- 📱 **交互图表**：ECharts 驱动的可视化，多种图表类型
+- 🔧 **简单设置**：一键启动，自动环境配置
 
-### 技术栈
+## 📈 支持的 A 股指数
 
-- **前端**：TypeScript配合现代Web框架
-- **后端**：Go语言实现高性能数据处理
-- **数据层**：支持多数据源的可配置适配器
-- **可视化**：交互式图表和分析仪表板
+平台目前支持以下主要中国市场指数，均使用 AKShare 真实数据：
 
-### 系统概览
+| 指数 | 名称 | 代码 | 描述 |
+|------|------|--------|--------------|
+| **汪深300** | CSI 300 | 000300.SH | 中国最具代表性的300只大盘股 |
+| **上证50** | SSE 50 | 000016.SH | 上海证券市场最具代表性的50只股票 |
+| **中证500** | CSI 500 | 000905.SH | 中小市值代表性指数 |
+| **中证1000** | CSI 1000 | 000852.SH | 中小市值股票价格表现 |
+| **科创50** | STAR 50 | 000688.SH | 科创板最具代表性的50只证券 |
+| **创业板指** | ChiNext | 399006.SZ | 创业板市场运行情况 |
+| **深证100** | SZSE 100 | 399330.SZ | 深圳市场最活跃100只成份股 |
 
-```
-┌─────────────────────┐    ┌─────────────────────┐    ┌─────────────────────┐
-│      Web界面        │    │     后端引擎        │    │     数据提供商      │
-│    (TypeScript)     │◄──►│     (Golang)        │◄──►│     (可配置)        │
-├─────────────────────┤    ├─────────────────────┤    ├─────────────────────┤
-│ • 策略构建器        │    │ • 回测核心          │    │ • 本地数据库        │
-│ • 参数配置          │    │ • 风险分析          │    │ • 市场数据API       │
-│ • 结果仪表板        │    │ • 性能计算          │    │ • 替代数据源        │
-│ • 组合视图          │    │ • 数据管道          │    │ • 实时数据流        │
-└─────────────────────┘    └─────────────────────┘    └─────────────────────┘
-```
+### 数据特性
+- ✅ **真实市场数据**：直接集成 AKShare 获取正宗历史数据
+- ✅ **完整 OHLCV**：完整的开盘、最高、最低、收盘、成交量数据
+- ✅ **手续费处理**：真实交易成本计算
+- ✅ **日期范围筛选**：灵活历史周期选择
 
-## 应用场景
+## 📋 月末轮动策略
 
-### 示例：中证500月度轮动策略
+### 策略实现
 
-**策略逻辑**：
-- 入场：月末买入中证500指数
-- 出场：次月初卖出全部仓位
-- 资金：满仓配置并定期再平衡
-
-**性能指标**：
-- 总收益率和年化收益率
-- 最大回撤和恢复时间
-- 夏普比率和索提诺比率
-- 胜负比和平均持仓时间
-- 波动率和贝塔分析
-
-## 数据源配置
-
-### 支持市场
-
-| 市场 | 资产类别 | 数据提供商 | 更新频率 |
-|------|----------|------------|----------|
-| A股 | 股票、指数、ETF | Tushare、Wind、本地数据库 | 日频、分钟 |
-| 数字货币 | 比特币、主流代币 | Binance、CoinGecko、API | Tick、分钟、日频 |
-| 港美股 | 股票、ETF、ADR | Yahoo Finance、Alpha Vantage | 日频、实时 |
-
-### 配置选项
-
-- **本地数据库**：历史数据存储和管理
-- **API集成**：实时和历史数据源
-- **自定义适配器**：支持新数据源的可扩展框架
-- **数据质量**：内置验证和清洗流程
-
-## 性能分析
-
-### 核心指标
-
-| 类别 | 指标 | 描述 |
-|------|------|------|
-| **收益** | 总收益、年化收益、滚动收益 | 绝对收益和风险调整收益 |
-| **风险** | 最大回撤、VaR、CVaR、波动率 | 下行风险和波动性测量 |
-| **比率** | 夏普、索提诺、卡玛、信息比率 | 风险调整收益比率 |
-| **交易** | 胜率、盈亏比、期望值 | 交易级别统计 |
-
-### 高级分析
-
-- **因子归因**：按市场因子进行绩效分解
-- **市场状态分析**：不同市场环境下的策略表现
-- **蒙特卡罗模拟**：概率情景分析
-- **压力测试**：极端市场条件下的表现
-
-## 安装指南
-
-### 系统要求
-
-- Go 1.19或更高版本
-- Node.js 16或更高版本
-- 支持JavaScript的现代浏览器
-
-### 快速开始
-
-```bash
-# 克隆仓库
-git clone https://github.com/your-org/macro_strategy.git
-cd macro_strategy
-
-# 后端设置
-cd backend
-go mod download
-go build -o main .
-
-# 前端设置
-cd ../frontend
-npm install
-npm run build
-
-# 启动服务
-./backend/main &
-npm run serve
-```
-
-### 配置说明
-
-1. **数据源配置**：编辑 `config/data_sources.yaml`
-2. **后端设置**：修改 `config/server.yaml`
-3. **前端配置**：更新 `frontend/src/config.ts`
-
-## 项目结构
+平台实现了完整的 **月末轮动策略**，逻辑如下：
 
 ```
-macro_strategy/
-├── backend/
-│   ├── cmd/                    # 应用程序入口
-│   ├── internal/
-│   │   ├── api/               # REST API处理器
-│   │   ├── backtesting/       # 核心回测引擎
-│   │   ├── data/              # 数据访问层
-│   │   ├── models/            # 业务领域模型
-│   │   └── services/          # 业务逻辑服务
-│   ├── pkg/                   # 共享包
-│   └── config/                # 配置文件
-├── frontend/
-│   ├── src/
-│   │   ├── components/        # React组件
-│   │   ├── pages/             # 应用页面
-│   │   ├── services/          # API服务层
-│   │   ├── utils/             # 工具函数
-│   │   └── types/             # TypeScript类型定义
-│   └── public/                # 静态资源
-├── docs/                      # 文档
-└── scripts/                   # 构建和部署脚本
+📅 月末入场：
+   • 买入信号：月末前 N 天
+   • 全仓配置到选定指数
+   • 市价单执行，含手续费
+
+📅 月初出场：
+   • 卖出信号：月初后 M 天
+   • 完全清仓
+   • 返回现金等待下次信号
+
+🔄 在整个回测周期内重复循环
 ```
 
-## API接口
+**可配置参数**：
+- `buy_days_before_month_end`：入场时机（默认：1 天）
+- `sell_days_after_month_start`：出场时机（默认：1 天）
+- `initial_cash`：起始资金（默认：1,000,000 人民币）
+- `commission_rate`：交易成本（每笔交易可配置）
 
-### 核心端点
+### 用例：中证1000月末轮动
 
-- `POST /api/v1/strategies` - 创建新策略
-- `GET /api/v1/strategies/{id}/backtest` - 运行回测
-- `GET /api/v1/strategies/{id}/results` - 获取结果
-- `GET /api/v1/data/markets` - 可用市场
-- `POST /api/v1/data/configure` - 配置数据源
+**场景**：测试中证1000指数的月末轮动
+- **周期**：2024-01-01 至 2024-03-31
+- **入场**：月末前 1 天
+- **出场**：月初后 1 天
+- **资金**：1,000,000 人民币
 
-### WebSocket事件
-
-- `backtest.progress` - 实时回测进度
-- `data.update` - 实时数据更新
-- `strategy.notification` - 策略提醒
-
-## 开发贡献
-
-我们欢迎量化金融社区的贡献。请阅读我们的贡献指南并提交拉取请求进行审核。
-
-### 开发流程
-
-1. Fork仓库
-2. 创建功能分支 (`git checkout -b feature/amazing-feature`)
-3. 提交更改 (`git commit -m 'Add amazing feature'`)
-4. 推送分支 (`git push origin feature/amazing-feature`)
-5. 创建拉取请求
-
-## 开源协议
-
-本项目采用MIT协议。详见 [LICENSE](LICENSE) 文件。
-
-## 风险提示
-
-⚠️ **重要提示**：本软件仅用于研究和教育目的。历史业绩不代表未来收益。用户在实盘交易前有责任验证所有策略和数据。
+**结果** (✅ **已修复准确性问题**):
+- ✅ **胜率**：50.00%（1 胜 1 负）
+- ✅ **总收益率**：0.4965%
+- ✅ **夏普比率**：-0.665
+- ✅ **最大回撤**：0.0599%

@@ -190,16 +190,25 @@ func (be *BacktestEngine) calculateTradeMetrics(trades []models.Trade) TradeMetr
 	var roundTrips []float64
 	var buyTrade *models.Trade
 
-	for _, trade := range trades {
-		if trade.Action == "buy" {
-			buyTrade = &trade
-		} else if trade.Action == "sell" && buyTrade != nil {
-			// Calculate P&L for this round trip (absolute dollar amount)
-			pnl := (trade.Price-buyTrade.Price)*trade.Quantity - trade.Commission - buyTrade.Commission
-			// Store absolute P&L instead of percentage for easier analysis
-			roundTrips = append(roundTrips, pnl)
+	for i, trade := range trades {
+		currentTrade := trade // Create a copy to avoid pointer issues
+		if currentTrade.Action == "buy" {
+			buyTrade = &currentTrade
+		} else if currentTrade.Action == "sell" && buyTrade != nil {
+			// Calculate P&L for this round trip
+			grossPnL := (currentTrade.Price - buyTrade.Price) * currentTrade.Quantity
+			totalCommission := currentTrade.Commission + buyTrade.Commission
+			netPnL := grossPnL - totalCommission
+			
+			// Calculate percentage return based on initial investment
+			initialInvestment := buyTrade.Price * buyTrade.Quantity + buyTrade.Commission
+			percentageReturn := netPnL / initialInvestment
+			
+			// Store percentage return for analysis
+			roundTrips = append(roundTrips, percentageReturn)
 			buyTrade = nil
 		}
+		_ = i // Suppress unused variable warning
 	}
 
 	if len(roundTrips) == 0 {
@@ -209,26 +218,26 @@ func (be *BacktestEngine) calculateTradeMetrics(trades []models.Trade) TradeMetr
 	// Analyze round trips
 	winningTrades := 0
 	losingTrades := 0
-	totalWinningPnL := 0.0
-	totalLosingPnL := 0.0
+	totalWinningReturn := 0.0
+	totalLosingReturn := 0.0
 	maxWinningTrade := math.Inf(-1)
 	maxLosingTrade := math.Inf(1)
 
-	for _, pnl := range roundTrips {
-		if pnl > 0 {
+	for _, returnPct := range roundTrips {
+		if returnPct > 0 {
 			winningTrades++
-			totalWinningPnL += pnl
-			if pnl > maxWinningTrade {
-				maxWinningTrade = pnl
+			totalWinningReturn += returnPct
+			if returnPct > maxWinningTrade {
+				maxWinningTrade = returnPct
 			}
-		} else if pnl < 0 {
+		} else if returnPct < 0 {
 			losingTrades++
-			totalLosingPnL += math.Abs(pnl)
-			if pnl < maxLosingTrade {
-				maxLosingTrade = pnl
+			totalLosingReturn += math.Abs(returnPct)
+			if returnPct < maxLosingTrade {
+				maxLosingTrade = returnPct
 			}
 		}
-		// Note: pnl == 0 (breakeven trades) are not counted as wins or losses
+		// Note: returnPct == 0 (breakeven trades) are not counted as wins or losses
 	}
 
 	winRate := 0.0
@@ -237,21 +246,21 @@ func (be *BacktestEngine) calculateTradeMetrics(trades []models.Trade) TradeMetr
 	}
 
 	profitFactor := 0.0
-	if totalLosingPnL > 0 {
-		profitFactor = totalWinningPnL / totalLosingPnL
-	} else if totalWinningPnL > 0 {
+	if totalLosingReturn > 0 {
+		profitFactor = totalWinningReturn / totalLosingReturn
+	} else if totalWinningReturn > 0 {
 		// All trades are winning, set a high profit factor
 		profitFactor = math.Inf(1)
 	}
 
 	avgWinningTrade := 0.0
 	if winningTrades > 0 {
-		avgWinningTrade = totalWinningPnL / float64(winningTrades)
+		avgWinningTrade = totalWinningReturn / float64(winningTrades)
 	}
 
 	avgLosingTrade := 0.0
 	if losingTrades > 0 {
-		avgLosingTrade = -totalLosingPnL / float64(losingTrades)
+		avgLosingTrade = -totalLosingReturn / float64(losingTrades)
 	}
 
 	if math.IsInf(maxWinningTrade, -1) {
