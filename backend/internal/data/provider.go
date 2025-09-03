@@ -1,5 +1,4 @@
 package data
-package data
 
 import (
 	"fmt"
@@ -40,7 +39,7 @@ func (dsm *DataSourceManager) GetProvider(marketType models.MarketType) (DataPro
 	return provider, nil
 }
 
-// GetMarketData fetches historical data for an index
+// GetMarketData fetches historical data for an asset with enhanced support
 func (dsm *DataSourceManager) GetMarketData(index *models.Index, startDate, endDate time.Time) (*models.MarketData, error) {
 	provider, err := dsm.GetProvider(index.MarketType)
 	if err != nil {
@@ -53,7 +52,13 @@ func (dsm *DataSourceManager) GetMarketData(index *models.Index, startDate, endD
 	}
 
 	return &models.MarketData{
-		IndexID: index.ID,
-		Data:    data,
+		AssetID:    index.ID,
+		Symbol:     index.Symbol,
+		MarketType: index.MarketType,
+		AssetClass: index.AssetClass,
+		Currency:   index.Currency,
+		Data:       data,
+		LastUpdate: time.Now(),
+		Metadata:   make(map[string]interface{}),
 	}, nil
 }

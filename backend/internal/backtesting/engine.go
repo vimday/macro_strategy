@@ -1,5 +1,4 @@
 package backtesting
-package backtesting
 
 import (
 	"fmt"
@@ -24,27 +23,27 @@ func NewBacktestEngine() *BacktestEngine {
 // RunBacktest executes a backtest for given request
 func (be *BacktestEngine) RunBacktest(request models.BacktestRequest, marketData *models.MarketData) (*models.BacktestResult, error) {
 	startTime := time.Now()
-	
+
 	// Validate request
 	if err := be.validateRequest(request); err != nil {
 		return nil, fmt.Errorf("invalid request: %w", err)
 	}
-	
+
 	// Filter market data to backtest period
 	filteredData := be.filterDataByDateRange(marketData.Data, request.StartDate, request.EndDate)
 	if len(filteredData) == 0 {
 		return nil, fmt.Errorf("no market data available for the specified period")
 	}
-	
+
 	// Execute strategy
 	trades, dailyReturns, err := be.executeStrategy(request, filteredData)
 	if err != nil {
 		return nil, fmt.Errorf("strategy execution failed: %w", err)
 	}
-	
+
 	// Calculate performance metrics
 	metrics := be.calculatePerformanceMetrics(dailyReturns, trades)
-	
+
 	// Create result
 	result := &models.BacktestResult{
 		ID:                 generateBacktestID(),
@@ -55,7 +54,7 @@ func (be *BacktestEngine) RunBacktest(request models.BacktestRequest, marketData
 		CreatedAt:          startTime,
 		Duration:           time.Since(startTime),
 	}
-	
+
 	return result, nil
 }
 
@@ -105,17 +104,20 @@ func (be *BacktestEngine) executeMonthlyRotationStrategy(request models.Backtest
 	if err != nil {
 		return nil, nil, err
 	}
-	
+
 	var trades []models.Trade
 	var dailyReturns []models.DailyReturn
-	
+
 	cash := request.InitialCash
 	position := models.Position{}
-	
+
+	// Store initial portfolio value for calculations
+	initialPortfolioValue := request.InitialCash
+
 	for i, dataPoint := range data {
 		currentDate := dataPoint.Date
 		currentPrice := dataPoint.Close
-		
+
 		// Check if we should buy
 		if be.shouldBuy(currentDate, params.BuyDaysBeforeMonthEnd, data, i) && position.Quantity == 0 {
 			// Buy with all available cash
@@ -124,7 +126,7 @@ func (be *BacktestEngine) executeMonthlyRotationStrategy(request models.Backtest
 				amount := quantity * currentPrice
 				commission := amount * be.commissionRate
 				totalCost := amount + commission
-				
+
 				if totalCost <= cash {
 					trade := models.Trade{
 						Date:       currentDate,
@@ -135,21 +137,21 @@ func (be *BacktestEngine) executeMonthlyRotationStrategy(request models.Backtest
 						Commission: commission,
 					}
 					trades = append(trades, trade)
-					
+
 					cash -= totalCost
 					position.Quantity = quantity
 					position.AvgPrice = currentPrice
 				}
 			}
 		}
-		
+
 		// Check if we should sell
 		if be.shouldSell(currentDate, params.SellDaysAfterMonthStart, data, i) && position.Quantity > 0 {
 			// Sell all positions
 			amount := position.Quantity * currentPrice
 			commission := amount * be.commissionRate
 			netAmount := amount - commission
-			
+
 			trade := models.Trade{
 				Date:       currentDate,
 				Action:     "sell",
@@ -159,27 +161,30 @@ func (be *BacktestEngine) executeMonthlyRotationStrategy(request models.Backtest
 				Commission: commission,
 			}
 			trades = append(trades, trade)
-			
+
 			cash += netAmount
 			position = models.Position{} // Reset position
 		}
-		
+
 		// Update position market value if holding
 		if position.Quantity > 0 {
 			position.MarketValue = position.Quantity * currentPrice
 			position.UnrealizedPL = position.MarketValue - (position.Quantity * position.AvgPrice)
 		}
-		
+
 		// Calculate daily portfolio value
 		portfolioValue := cash + position.MarketValue
 		dailyReturn := 0.0
-		cumulativeReturn := (portfolioValue - request.InitialCash) / request.InitialCash
-		
+		cumulativeReturn := (portfolioValue - initialPortfolioValue) / initialPortfolioValue
+
+		// Calculate daily return correctly: only after first day
 		if i > 0 {
 			prevValue := dailyReturns[i-1].PortfolioValue
-			dailyReturn = (portfolioValue - prevValue) / prevValue
+			if prevValue > 0 {
+				dailyReturn = (portfolioValue - prevValue) / prevValue
+			}
 		}
-		
+
 		dailyReturns = append(dailyReturns, models.DailyReturn{
 			Date:             currentDate,
 			PortfolioValue:   portfolioValue,
@@ -189,17 +194,46 @@ func (be *BacktestEngine) executeMonthlyRotationStrategy(request models.Backtest
 			Position:         position,
 		})
 	}
-	
+
+	// Force sell any remaining positions at the end of backtest period
+	if position.Quantity > 0 {
+		lastDay := data[len(data)-1]
+		lastPrice := lastDay.Close
+		lastDate := lastDay.Date
+
+		// Sell all remaining positions
+		amount := position.Quantity * lastPrice
+		commission := amount * be.commissionRate
+		netAmount := amount - commission
+
+		trade := models.Trade{
+			Date:       lastDate,
+			Action:     "sell",
+			Price:      lastPrice,
+			Quantity:   position.Quantity,
+			Amount:     amount,
+			Commission: commission,
+		}
+		trades = append(trades, trade)
+
+		// Update final portfolio state
+		lastIndex := len(dailyReturns) - 1
+		dailyReturns[lastIndex].Cash += netAmount
+		dailyReturns[lastIndex].Position = models.Position{}
+		dailyReturns[lastIndex].PortfolioValue = dailyReturns[lastIndex].Cash
+		dailyReturns[lastIndex].CumulativeReturn = (dailyReturns[lastIndex].PortfolioValue - initialPortfolioValue) / initialPortfolioValue
+	}
+
 	// Calculate drawdown for each day
 	be.calculateDrawdown(dailyReturns)
-	
+
 	return trades, dailyReturns, nil
 }
 
 // parseMonthlyRotationParams parses monthly rotation strategy parameters
 func (be *BacktestEngine) parseMonthlyRotationParams(parameters map[string]interface{}) (*models.MonthlyRotationParams, error) {
 	params := &models.MonthlyRotationParams{}
-	
+
 	if buyDays, ok := parameters["buy_days_before_month_end"]; ok {
 		if buyDaysFloat, ok := buyDays.(float64); ok {
 			params.BuyDaysBeforeMonthEnd = int(buyDaysFloat)
@@ -209,7 +243,7 @@ func (be *BacktestEngine) parseMonthlyRotationParams(parameters map[string]inter
 	} else {
 		params.BuyDaysBeforeMonthEnd = 1 // Default value
 	}
-	
+
 	if sellDays, ok := parameters["sell_days_after_month_start"]; ok {
 		if sellDaysFloat, ok := sellDays.(float64); ok {
 			params.SellDaysAfterMonthStart = int(sellDaysFloat)
@@ -219,70 +253,74 @@ func (be *BacktestEngine) parseMonthlyRotationParams(parameters map[string]inter
 	} else {
 		params.SellDaysAfterMonthStart = 1 // Default value
 	}
-	
+
 	return params, nil
 }
 
 // shouldBuy determines if we should buy on a given date
 func (be *BacktestEngine) shouldBuy(currentDate time.Time, buyDaysBeforeMonthEnd int, data []models.OHLCV, currentIndex int) bool {
-	// Find the last trading day of the month
+	// Find the last trading day of the month for the current date's month
 	year, month, _ := currentDate.Date()
-	
-	// Get all trading days in this month
+
+	// Get all trading days in this month from the data
 	var monthTradingDays []time.Time
 	for _, d := range data {
 		if d.Date.Year() == year && d.Date.Month() == month {
 			monthTradingDays = append(monthTradingDays, d.Date)
 		}
 	}
-	
+
 	if len(monthTradingDays) < buyDaysBeforeMonthEnd {
 		return false
 	}
-	
-	// Sort trading days
+
+	// Sort trading days to ensure correct order
 	sort.Slice(monthTradingDays, func(i, j int) bool {
 		return monthTradingDays[i].Before(monthTradingDays[j])
 	})
-	
+
 	// Find the target buy date (buyDaysBeforeMonthEnd from the end)
+	// If buyDaysBeforeMonthEnd = 1, we want the last trading day
+	// If buyDaysBeforeMonthEnd = 2, we want the second-to-last trading day
 	targetIndex := len(monthTradingDays) - buyDaysBeforeMonthEnd
 	if targetIndex < 0 {
 		targetIndex = 0
 	}
-	
+
 	targetDate := monthTradingDays[targetIndex]
 	return currentDate.Equal(targetDate)
 }
 
 // shouldSell determines if we should sell on a given date
 func (be *BacktestEngine) shouldSell(currentDate time.Time, sellDaysAfterMonthStart int, data []models.OHLCV, currentIndex int) bool {
-	// Find the first trading day of the month
+	// Find the first trading day of the month for the current date's month
 	year, month, _ := currentDate.Date()
-	
-	// Get all trading days in this month
+
+	// Get all trading days in this month from the data
 	var monthTradingDays []time.Time
 	for _, d := range data {
 		if d.Date.Year() == year && d.Date.Month() == month {
 			monthTradingDays = append(monthTradingDays, d.Date)
 		}
 	}
-	
+
 	if len(monthTradingDays) < sellDaysAfterMonthStart {
 		return false
 	}
-	
-	// Sort trading days
+
+	// Sort trading days to ensure correct order
 	sort.Slice(monthTradingDays, func(i, j int) bool {
 		return monthTradingDays[i].Before(monthTradingDays[j])
 	})
-	
+
 	// Find the target sell date (sellDaysAfterMonthStart from the beginning)
+	// If sellDaysAfterMonthStart = 1, we want the first trading day
+	// If sellDaysAfterMonthStart = 2, we want the second trading day
 	targetIndex := sellDaysAfterMonthStart - 1
 	if targetIndex >= len(monthTradingDays) {
 		targetIndex = len(monthTradingDays) - 1
 	}
-	
+
 	targetDate := monthTradingDays[targetIndex]
 	return currentDate.Equal(targetDate)
 }
@@ -290,12 +328,12 @@ func (be *BacktestEngine) shouldSell(currentDate time.Time, sellDaysAfterMonthSt
 // calculateDrawdown calculates drawdown for each day
 func (be *BacktestEngine) calculateDrawdown(dailyReturns []models.DailyReturn) {
 	peak := dailyReturns[0].PortfolioValue
-	
+
 	for i := range dailyReturns {
 		if dailyReturns[i].PortfolioValue > peak {
 			peak = dailyReturns[i].PortfolioValue
 		}
-		
+
 		drawdown := (peak - dailyReturns[i].PortfolioValue) / peak
 		dailyReturns[i].Drawdown = drawdown
 	}

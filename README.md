@@ -85,41 +85,105 @@ A comprehensive platform for testing and comparing macro trading strategies acro
 - **Monte Carlo Simulation**: Probabilistic scenario analysis
 - **Stress Testing**: Performance under extreme market conditions
 
-## Installation
+## 快速开始
 
-### Prerequisites
+### AKShare 真实数据配置
 
-- Go 1.19 or higher
-- Node.js 16 or higher
-- Modern web browser with JavaScript enabled
-
-### Quick Start
+**重要**: 本地测试默认使用 AKShare 真实数据，不再使用 Mock 数据。Mock 数据仅用于单元测试。
 
 ```bash
-# Clone repository
+# 设置 AKShare 环境（首次使用）
+./setup_akshare.sh
+```
+
+该脚本会：
+- 创建 Python 虚拟环境
+- 安装 AKShare 和 pandas 依赖
+- 测试数据获取功能
+- 配置后端使用真实 A股数据
+
+### 一键启动开发环境
+
+```bash
+# 克隆项目
 git clone https://github.com/your-org/macro_strategy.git
 cd macro_strategy
 
-# Backend setup
-cd backend
-go mod download
-go build -o main .
+# 设置 AKShare（首次运行）
+./setup_akshare.sh
 
-# Frontend setup
-cd ../frontend
-npm install
-npm run build
-
-# Start services
-./backend/main &
-npm run serve
+# 一键启动（推荐）
+./start_dev.sh
 ```
 
-### Configuration
+### 手动启动
 
-1. **Data Sources**: Configure `config/data_sources.yaml`
-2. **Backend Settings**: Modify `config/server.yaml`
-3. **Frontend Config**: Update `frontend/src/config.ts`
+```bash
+# 后端启动
+cd backend
+go mod tidy
+go run cmd/main.go
+
+# 前端启动（新终端）
+cd frontend
+npm install
+npm run dev
+```
+
+### 访问应用
+
+- **前端界面**: http://localhost:3000
+- **后端API**: http://localhost:8080  
+- **健康检查**: http://localhost:8080/api/v1/health
+
+## 主要功能特性
+
+### ✅ 已实现功能
+
+1. **完整的回测框架**
+   - 月度轮动策略实现
+   - 专业级性能指标计算（夏普比率、最大回撤、索提诺比率等）
+   - 实时图表可视化
+
+2. **多数据源支持**
+   - AKShare 数据提供者（A股实时数据，本地测试默认启用）
+   - Mock 数据提供者（仅用于单元测试）
+   - 可扩展架构支持更多数据源（加密货币、港美股等）
+
+3. **通用数据模型**
+   - 支持 A股、加密货币、港美股等多种资产类别
+   - 统一的 OHLCV 数据格式
+   - 灵活的元数据支持
+
+4. **现代化前端界面**
+   - TypeScript + Next.js + Ant Design
+   - 响应式设计，支持移动端
+   - 交互式图表展示
+
+5. **高性能后端**
+   - Go 语言实现，高并发处理
+   - RESTful API 设计
+   - 内存缓存优化
+
+### 🚧 扩展计划
+
+1. **更多策略类型**
+   - 买入持有策略
+   - 网格交易策略
+   - 均值回归策略
+   - 动量策略
+
+2. **更多资产类别**
+   - 加密货币（BTC、ETH 等）
+   - 港美股指数
+   - 商品期货
+   - 债券ETF
+
+3. **高级功能**
+   - 策略组合回测
+   - 风险管理模块
+   - 实时信号推送
+   - 策略优化器
 
 ## Project Structure
 

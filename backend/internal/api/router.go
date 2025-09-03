@@ -17,14 +17,22 @@ func SetupRouter() *gin.Engine {
 
 	// Configure CORS
 	config := cors.DefaultConfig()
-	config.AllowOrigins = []string{"http://localhost:3000"}
+	config.AllowOrigins = []string{"http://localhost:3000", "http://localhost:3001"}
 	config.AllowMethods = []string{"GET", "POST", "PUT", "DELETE", "OPTIONS"}
 	config.AllowHeaders = []string{"Origin", "Content-Type", "Authorization"}
 	router.Use(cors.New(config))
 
 	// Initialize services
 	dataManager := data.NewDataSourceManager()
-	dataManager.RegisterProvider(models.MarketTypeAShare, data.NewMockDataProvider())
+	// Use AKShare provider for real A-share data
+	venvPython := "../venv/bin/python3"
+	akshareProvider := data.NewAKShareProvider(venvPython, "./scripts/akshare_client.py")
+	dataManager.RegisterProvider(models.MarketTypeAShare, akshareProvider)
+
+	// Register mock provider for other markets (crypto, HK/US) - can be replaced with real providers later
+	mockProvider := data.NewMockDataProvider()
+	dataManager.RegisterProvider(models.MarketTypeCrypto, mockProvider)
+	dataManager.RegisterProvider(models.MarketTypeHKUS, mockProvider)
 
 	backtestEngine := backtesting.NewBacktestEngine()
 	backtestService := services.NewBacktestService(dataManager, backtestEngine)

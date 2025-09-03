@@ -3,6 +3,7 @@ import { Inter } from "next/font/google";
 import "./globals.css";
 import { AntdRegistry } from '@ant-design/nextjs-registry';
 import { Providers } from './providers';
+import '@ant-design/v5-patch-for-react-19';
 
 const inter = Inter({ subsets: ["latin"] });
 

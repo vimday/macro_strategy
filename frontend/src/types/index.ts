@@ -1,16 +1,34 @@
 // Market Types
-export type MarketType = 'a_share' | 'crypto' | 'hk_us';
+export type MarketType = 'a_share' | 'crypto' | 'hk_us' | 'etf' | 'bond' | 'future' | 'option';
 
-// Index interface
+// Asset Classes
+export type AssetClass = 'equity' | 'crypto' | 'commodity' | 'bond' | 'derivative' | 'index';
+
+// Currencies
+export type Currency = 'CNY' | 'USD' | 'HKD' | 'BTC' | 'ETH';
+
+// Trading Hours
+export interface TradingHours {
+  timezone: string;
+  open_time: string;
+  close_time: string;
+  weekend_days: number[];
+}
+
+// Index interface with enhanced metadata
 export interface Index {
   id: string;
   name: string;
   symbol: string;
   market_type: MarketType;
+  asset_class: AssetClass;
+  currency: Currency;
   description: string;
+  trading_hours?: TradingHours;
+  metadata?: Record<string, any>;
 }
 
-// OHLCV data point
+// OHLCV data point with enhanced fields
 export interface OHLCV {
   date: string;
   open: number;
@@ -18,22 +36,43 @@ export interface OHLCV {
   low: number;
   close: number;
   volume: number;
+  amount?: number;   // 成交额
+  turnover?: number; // 换手率
+  pct_chg?: number;  // 涨跌幅
 }
 
-// Market data
+// Market data with enhanced metadata
 export interface MarketData {
-  index_id: string;
+  asset_id: string;
+  symbol: string;
+  market_type: MarketType;
+  asset_class: AssetClass;
+  currency: Currency;
   data: OHLCV[];
+  metadata?: Record<string, any>;
+  last_update: string;
 }
 
-// Strategy types
-export type StrategyType = 'monthly_rotation';
+// Strategy types with enhanced options
+export type StrategyType = 'monthly_rotation' | 'buy_and_hold' | 'grid_trading' | 'mean_reversion' | 'momentum';
 
-// Strategy configuration
+// Risk management configuration
+export interface RiskManagementConfig {
+  max_position_size?: number;
+  stop_loss?: number;
+  take_profit?: number;
+  max_drawdown?: number;
+  commission_rate?: number;
+  slippage_rate?: number;
+}
+
+// Strategy configuration with enhanced flexibility
 export interface StrategyConfig {
   type: StrategyType;
   parameters: Record<string, any>;
   description: string;
+  risk_management?: RiskManagementConfig;
+  metadata?: Record<string, any>;
 }
 
 // Monthly rotation strategy parameters
@@ -42,13 +81,18 @@ export interface MonthlyRotationParams {
   sell_days_after_month_start: number;
 }
 
-// Backtest request
+// Backtest request with enhanced configuration
 export interface BacktestRequest {
-  index_id: string;
+  asset_id?: string;  // 新字段
+  index_id?: string;  // 向后兼容
   strategy: StrategyConfig;
   start_date: string;
   end_date: string;
   initial_cash: number;
+  benchmark?: string;
+  rebalance_freq?: string;
+  data_source?: string;
+  metadata?: Record<string, any>;
 }
 
 // Trade record

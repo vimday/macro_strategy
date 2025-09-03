@@ -14,11 +14,20 @@ func (be *BacktestEngine) calculatePerformanceMetrics(dailyReturns []models.Dail
 	initialValue := dailyReturns[0].PortfolioValue
 	finalValue := dailyReturns[len(dailyReturns)-1].PortfolioValue
 
-	// Basic return metrics
-	totalReturn := (finalValue - initialValue) / initialValue
+	// Basic return metrics - ensure we don't divide by zero
+	totalReturn := 0.0
+	if initialValue > 0 {
+		totalReturn = (finalValue - initialValue) / initialValue
+	}
+
 	daysCount := len(dailyReturns)
 	yearsCount := float64(daysCount) / 252.0 // Assuming 252 trading days per year
-	annualizedReturn := math.Pow(1+totalReturn, 1/yearsCount) - 1
+
+	// Calculate annualized return safely
+	annualizedReturn := 0.0
+	if yearsCount > 0 && totalReturn > -1 {
+		annualizedReturn = math.Pow(1+totalReturn, 1/yearsCount) - 1
+	}
 
 	// Calculate daily returns for further analysis
 	var returns []float64
@@ -149,8 +158,11 @@ func (be *BacktestEngine) calculateSortinoRatio(returns []float64, riskFreeRate 
 
 // calculateCalmarRatio calculates the Calmar ratio
 func (be *BacktestEngine) calculateCalmarRatio(annualizedReturn, maxDrawdown float64) float64 {
-	if maxDrawdown == 0 {
-		return math.Inf(1)
+	if maxDrawdown <= 0 {
+		if annualizedReturn > 0 {
+			return math.Inf(1) // Positive return with no drawdown
+		}
+		return 0 // No drawdown, no meaningful ratio
 	}
 	return annualizedReturn / maxDrawdown
 }
@@ -182,10 +194,10 @@ func (be *BacktestEngine) calculateTradeMetrics(trades []models.Trade) TradeMetr
 		if trade.Action == "buy" {
 			buyTrade = &trade
 		} else if trade.Action == "sell" && buyTrade != nil {
-			// Calculate P&L for this round trip
+			// Calculate P&L for this round trip (absolute dollar amount)
 			pnl := (trade.Price-buyTrade.Price)*trade.Quantity - trade.Commission - buyTrade.Commission
-			pnlPercent := pnl / (buyTrade.Price * buyTrade.Quantity)
-			roundTrips = append(roundTrips, pnlPercent)
+			// Store absolute P&L instead of percentage for easier analysis
+			roundTrips = append(roundTrips, pnl)
 			buyTrade = nil
 		}
 	}
@@ -209,13 +221,14 @@ func (be *BacktestEngine) calculateTradeMetrics(trades []models.Trade) TradeMetr
 			if pnl > maxWinningTrade {
 				maxWinningTrade = pnl
 			}
-		} else {
+		} else if pnl < 0 {
 			losingTrades++
 			totalLosingPnL += math.Abs(pnl)
 			if pnl < maxLosingTrade {
 				maxLosingTrade = pnl
 			}
 		}
+		// Note: pnl == 0 (breakeven trades) are not counted as wins or losses
 	}
 
 	winRate := 0.0
@@ -226,6 +239,9 @@ func (be *BacktestEngine) calculateTradeMetrics(trades []models.Trade) TradeMetr
 	profitFactor := 0.0
 	if totalLosingPnL > 0 {
 		profitFactor = totalWinningPnL / totalLosingPnL
+	} else if totalWinningPnL > 0 {
+		// All trades are winning, set a high profit factor
+		profitFactor = math.Inf(1)
 	}
 
 	avgWinningTrade := 0.0
