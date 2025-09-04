@@ -1,68 +1,26 @@
-import { type ClassValue, clsx } from 'clsx';
-import { twMerge } from 'tailwind-merge';
+import { PerformanceMetrics } from '@/types';
 
 /**
- * Utility function to merge Tailwind CSS classes
+ * Format percentage value
  */
-export function cn(...inputs: ClassValue[]) {
-  return twMerge(clsx(inputs));
+export function formatPercentage(value: number): string {
+  return `${(value * 100).toFixed(2)}%`;
 }
 
 /**
- * Format number as percentage
+ * Format currency value
  */
-export function formatPercentage(value: number, decimals: number = 2): string {
-  return `${(value * 100).toFixed(decimals)}%`;
+export function formatCurrency(value: number): string {
+  return new Intl.NumberFormat('zh-CN', {
+    style: 'currency',
+    currency: 'CNY',
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  }).format(value);
 }
 
 /**
- * Format number as currency
- */
-export function formatCurrency(value: number, currency: string = '¥'): string {
-  return `${currency}${value.toLocaleString('zh-CN', {
-    minimumFractionDigits: 0,
-    maximumFractionDigits: 0,
-  })}`;
-}
-
-/**
- * Format large numbers with K/M/B suffixes
- */
-export function formatLargeNumber(value: number): string {
-  if (value >= 1e9) {
-    return `${(value / 1e9).toFixed(1)}B`;
-  }
-  if (value >= 1e6) {
-    return `${(value / 1e6).toFixed(1)}M`;
-  }
-  if (value >= 1e3) {
-    return `${(value / 1e3).toFixed(1)}K`;
-  }
-  return value.toFixed(0);
-}
-
-/**
- * Format date to readable string
- */
-export function formatDate(date: string | Date): string {
-  const d = typeof date === 'string' ? new Date(date) : date;
-  return d.toLocaleDateString('zh-CN', {
-    year: 'numeric',
-    month: '2-digit',
-    day: '2-digit',
-  });
-}
-
-/**
- * Calculate percentage change between two values
- */
-export function calculatePercentageChange(current: number, previous: number): number {
-  if (previous === 0) return 0;
-  return (current - previous) / previous;
-}
-
-/**
- * Get color based on value (positive/negative)
+ * Get value color based on performance
  */
 export function getValueColor(value: number): string {
   if (value > 0) return 'text-green-600';
@@ -71,9 +29,112 @@ export function getValueColor(value: number): string {
 }
 
 /**
+ * Calculate performance metrics from trades and returns
+ */
+export function calculatePerformanceMetrics(
+  initialCash: number,
+  finalValue: number,
+  dailyReturns: { date: string; daily_return: number; cumulative_return: number; drawdown: number }[],
+  trades: { action: string; amount: number; commission: number }[]
+): PerformanceMetrics {
+  const totalReturn = (finalValue - initialCash) / initialCash;
+  
+  // Calculate annualized return (assuming daily returns)
+  const numDays = dailyReturns.length;
+  const annualizedReturn = Math.pow(1 + totalReturn, 365 / numDays) - 1;
+  
+  // Calculate volatility (standard deviation of daily returns)
+  const avgDailyReturn = dailyReturns.reduce((sum, dr) => sum + dr.daily_return, 0) / numDays;
+  const variance = dailyReturns.reduce((sum, dr) => sum + Math.pow(dr.daily_return - avgDailyReturn, 2), 0) / numDays;
+  const volatility = Math.sqrt(variance) * Math.sqrt(365); // Annualized volatility
+  
+  // Calculate max drawdown
+  const maxDrawdown = Math.min(...dailyReturns.map(dr => dr.drawdown));
+  
+  // Calculate Sharpe ratio (assuming risk-free rate of 0 for simplicity)
+  const sharpeRatio = volatility > 0 ? annualizedReturn / volatility : 0;
+  
+  // Calculate Sortino ratio (using downside deviation)
+  const negativeReturns = dailyReturns.filter(dr => dr.daily_return < 0);
+  const downsideVariance = negativeReturns.reduce((sum, dr) => sum + Math.pow(dr.daily_return - avgDailyReturn, 2), 0) / numDays;
+  const downsideDeviation = Math.sqrt(downsideVariance) * Math.sqrt(365);
+  const sortinoRatio = downsideDeviation > 0 ? annualizedReturn / downsideDeviation : 0;
+  
+  // Calculate Calmar ratio
+  const calmarRatio = maxDrawdown < 0 ? Math.abs(annualizedReturn / maxDrawdown) : 0;
+  
+  // Calculate trade statistics
+  const totalTrades = trades.length;
+  const winningTrades = trades.filter(trade => trade.action === 'sell' && trade.amount > 0).length;
+  const losingTrades = totalTrades - winningTrades;
+  const winRate = totalTrades > 0 ? winningTrades / totalTrades : 0;
+  
+  // Calculate profit factor
+  const grossProfit = trades.filter(trade => trade.action === 'sell' && trade.amount > 0)
+    .reduce((sum, trade) => sum + trade.amount, 0);
+  const grossLoss = Math.abs(trades.filter(trade => trade.action === 'sell' && trade.amount < 0)
+    .reduce((sum, trade) => sum + trade.amount, 0));
+  const profitFactor = grossLoss > 0 ? grossProfit / grossLoss : grossProfit > 0 ? Infinity : 0;
+  
+  // Calculate average winning/losing trades
+  const winningTradeValues = trades.filter(trade => trade.action === 'sell' && trade.amount > 0)
+    .map(trade => trade.amount / initialCash);
+  const losingTradeValues = trades.filter(trade => trade.action === 'sell' && trade.amount < 0)
+    .map(trade => trade.amount / initialCash);
+  
+  const avgWinningTrade = winningTradeValues.length > 0 
+    ? winningTradeValues.reduce((sum, val) => sum + val, 0) / winningTradeValues.length 
+    : 0;
+  
+  const avgLosingTrade = losingTradeValues.length > 0 
+    ? losingTradeValues.reduce((sum, val) => sum + val, 0) / losingTradeValues.length 
+    : 0;
+  
+  // Find max winning/losing trades
+  const maxWinningTrade = winningTradeValues.length > 0 
+    ? Math.max(...winningTradeValues) 
+    : 0;
+  
+  const maxLosingTrade = losingTradeValues.length > 0 
+    ? Math.min(...losingTradeValues) 
+    : 0;
+  
+  // Calculate max drawdown period and recovery period
+  let maxDrawdownPeriod = 0;
+  let recoveryPeriod = 0;
+  
+  // Simple implementation - in a real scenario, you'd want more sophisticated calculation
+  if (dailyReturns.length > 0) {
+    maxDrawdownPeriod = dailyReturns.filter(dr => dr.drawdown < 0).length;
+    recoveryPeriod = dailyReturns.filter(dr => dr.cumulative_return > 0).length;
+  }
+  
+  return {
+    total_return: totalReturn,
+    annualized_return: annualizedReturn,
+    max_drawdown: maxDrawdown,
+    sharpe_ratio: sharpeRatio,
+    sortino_ratio: sortinoRatio,
+    volatility: volatility,
+    win_rate: winRate,
+    profit_factor: profitFactor,
+    calmar_ratio: calmarRatio,
+    total_trades: totalTrades,
+    winning_trades: winningTrades,
+    losing_trades: losingTrades,
+    avg_winning_trade: avgWinningTrade,
+    avg_losing_trade: avgLosingTrade,
+    max_winning_trade: maxWinningTrade,
+    max_losing_trade: maxLosingTrade,
+    max_drawdown_period: maxDrawdownPeriod,
+    recovery_period: recoveryPeriod,
+  };
+}
+
+/**
  * Debounce function
  */
-export function debounce<T extends (...args: any[]) => any>(
+export function debounce<T extends (...args: unknown[]) => unknown>(
   func: T,
   wait: number
 ): (...args: Parameters<T>) => void {
@@ -146,7 +207,7 @@ export function getDrawdownColor(drawdown: number): string {
 /**
  * Convert array to chart data format
  */
-export function convertToChartData(data: any[], xKey: string, yKey: string) {
+export function convertToChartData(data: Record<string, unknown>[], xKey: string, yKey: string) {
   return data.map(item => ({
     x: item[xKey],
     y: item[yKey],

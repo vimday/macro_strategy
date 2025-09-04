@@ -2,7 +2,13 @@
 
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { indexService, backtestService } from '@/lib/api';
-import { Index, BacktestRequest, BacktestResult, MarketType } from '@/types';
+import { 
+  BacktestRequest, 
+  BacktestResult, 
+  MarketType,
+  MultiStrategyBacktestRequest,
+  MultiStrategyBacktestResult
+} from '@/types';
 
 /**
  * Hook to fetch all available indexes
@@ -12,7 +18,7 @@ export function useIndexes() {
     queryKey: ['indexes'],
     queryFn: indexService.getIndexes,
     staleTime: 5 * 60 * 1000, // 5 minutes
-    cacheTime: 10 * 60 * 1000, // 10 minutes
+    gcTime: 10 * 60 * 1000, // 10 minutes (cacheTime was renamed to gcTime in v5)
   });
 }
 
@@ -25,7 +31,7 @@ export function useIndexesByMarketType(marketType: MarketType) {
     queryFn: () => indexService.getIndexesByMarketType(marketType),
     enabled: !!marketType,
     staleTime: 5 * 60 * 1000,
-    cacheTime: 10 * 60 * 1000,
+    gcTime: 10 * 60 * 1000,
   });
 }
 
@@ -38,7 +44,7 @@ export function useIndex(id: string) {
     queryFn: () => indexService.getIndexById(id),
     enabled: !!id,
     staleTime: 5 * 60 * 1000,
-    cacheTime: 10 * 60 * 1000,
+    gcTime: 10 * 60 * 1000,
   });
 }
 
@@ -72,7 +78,41 @@ export function useBacktestResult(id: string) {
     queryFn: () => backtestService.getBacktestResult(id),
     enabled: !!id,
     staleTime: Infinity, // Backtest results don't change
-    cacheTime: 30 * 60 * 1000, // 30 minutes
+    gcTime: 30 * 60 * 1000, // 30 minutes
+  });
+}
+
+/**
+ * Hook to run a multi-strategy backtest
+ */
+export function useRunMultiStrategyBacktest() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (request: MultiStrategyBacktestRequest) => backtestService.runMultiStrategyBacktest(request),
+    onSuccess: (data: MultiStrategyBacktestResult) => {
+      // Cache the result for potential future retrieval
+      queryClient.setQueryData(['multi-strategy', data.id], data);
+      
+      // Invalidate any related queries if needed
+      queryClient.invalidateQueries({ queryKey: ['multi-strategy-backtests'] });
+    },
+    onError: (error) => {
+      console.error('Multi-strategy backtest failed:', error);
+    },
+  });
+}
+
+/**
+ * Hook to fetch a multi-strategy backtest result by ID
+ */
+export function useMultiStrategyResult(id: string) {
+  return useQuery({
+    queryKey: ['multi-strategy', id],
+    queryFn: () => backtestService.getMultiStrategyResult(id),
+    enabled: !!id,
+    staleTime: Infinity, // Backtest results don't change
+    gcTime: 30 * 60 * 1000, // 30 minutes
   });
 }
 

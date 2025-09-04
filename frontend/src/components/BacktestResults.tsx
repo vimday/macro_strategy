@@ -86,13 +86,13 @@ export function BacktestResults({ result, loading = false, error = null }: Backt
           <div>
             <div className="text-sm text-gray-500">买入时机</div>
             <div className="font-medium">
-              月末前 {(result.request.strategy.parameters as any).buy_days_before_month_end} 个交易日
+              月末前 {(result.request.strategy.parameters as { buy_days_before_month_end: number }).buy_days_before_month_end} 个交易日
             </div>
           </div>
           <div>
             <div className="text-sm text-gray-500">卖出时机</div>
             <div className="font-medium">
-              月初第 {(result.request.strategy.parameters as any).sell_days_after_month_start} 个交易日
+              月初第 {(result.request.strategy.parameters as { sell_days_after_month_start: number }).sell_days_after_month_start} 个交易日
             </div>
           </div>
         </div>

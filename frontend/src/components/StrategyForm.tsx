@@ -10,34 +10,43 @@ import {
   Row,
   Col,
   DatePicker,
+  Alert,
 } from 'antd';
-import { PlayIcon, BarChart3Icon } from 'lucide-react';
+import { PlayIcon, BarChart3Icon, InfoIcon } from 'lucide-react';
 import dayjs from 'dayjs';
 import { useIndexes } from '@/hooks/useBacktest';
-import { BacktestFormData, StrategyType } from '@/types';
+import { BacktestFormData, StrategyType, Index } from '@/types';
 
 const { Option } = Select;
 
 interface StrategyFormProps {
   onSubmit: (values: BacktestFormData) => void;
   loading: boolean;
+  multiStrategyMode?: boolean;
 }
 
-export function StrategyForm({ onSubmit, loading }: StrategyFormProps) {
+export function StrategyForm({ onSubmit, loading, multiStrategyMode = false }: StrategyFormProps) {
   const [form] = Form.useForm();
   const { data: indexes, isLoading: indexesLoading } = useIndexes();
 
-  const handleSubmit = (values: any) => {
+  const handleSubmit = (values: Record<string, unknown>) => {
     const formData: BacktestFormData = {
-      indexId: values.indexId,
-      strategyType: values.strategyType,
-      buyDaysBeforeMonthEnd: values.buyDaysBeforeMonthEnd,
-      sellDaysAfterMonthStart: values.sellDaysAfterMonthStart,
-      startDate: values.dateRange[0].format('YYYY-MM-DD'),
-      endDate: values.dateRange[1].format('YYYY-MM-DD'),
-      initialCash: values.initialCash,
+      indexId: values.indexId as string,
+      strategyType: values.strategyType as StrategyType,
+      buyDaysBeforeMonthEnd: values.buyDaysBeforeMonthEnd as number,
+      sellDaysAfterMonthStart: values.sellDaysAfterMonthStart as number,
+      startDate: (values.dateRange as [dayjs.Dayjs, dayjs.Dayjs])[0].format('YYYY-MM-DD'),
+      endDate: (values.dateRange as [dayjs.Dayjs, dayjs.Dayjs])[1].format('YYYY-MM-DD'),
+      initialCash: values.initialCash as number,
     };
     onSubmit(formData);
+  };
+
+  // Custom parser function with correct type
+  const parseCurrency = (value: string | undefined): string | number => {
+    if (!value) return '';
+    const parsed = parseFloat(value.replace(/,/g, ''));
+    return isNaN(parsed) ? '' : parsed;
   };
 
   return (
@@ -45,11 +54,22 @@ export function StrategyForm({ onSubmit, loading }: StrategyFormProps) {
       title={
         <div className="flex items-center">
           <PlayIcon className="mr-2 h-5 w-5" />
-          策略配置
+          {multiStrategyMode ? '多策略对比配置' : '策略配置'}
         </div>
       }
       className="mb-8"
     >
+      {multiStrategyMode && (
+        <Alert
+          message="多策略对比模式"
+          description="系统将自动为您生成三种不同参数的月度轮动策略进行对比：标准策略、激进策略和保守策略。"
+          type="info"
+          icon={<InfoIcon className="h-4 w-4" />}
+          showIcon
+          className="mb-6"
+        />
+      )}
+      
       <Form
         form={form}
         layout="vertical"
@@ -74,10 +94,10 @@ export function StrategyForm({ onSubmit, loading }: StrategyFormProps) {
                 loading={indexesLoading}
                 showSearch
                 filterOption={(input, option) =>
-                  option?.children?.toString().toLowerCase().includes(input.toLowerCase())
+                  (option?.children as unknown as string).toString().toLowerCase().includes(input.toLowerCase())
                 }
               >
-                {indexes?.map(index => (
+                {(indexes as Index[] | undefined)?.map(index => (
                   <Option key={index.id} value={index.id}>
                     {index.name} ({index.symbol})
                   </Option>
@@ -162,8 +182,8 @@ export function StrategyForm({ onSubmit, loading }: StrategyFormProps) {
                 min={10000}
                 max={100000000}
                 className="w-full"
-                formatter={value => `${value}`.replace(/\B(?=(\d{3})+(?!\d))/g, ',')}
-                parser={value => value?.replace(/\$\s?|(,*)/g, '')}
+                formatter={(value) => `${value}`.replace(/\B(?=(\d{3})+(?!\d))/g, ',')}
+                parser={parseCurrency}
                 placeholder="1,000,000"
               />
             </Form.Item>
@@ -179,7 +199,8 @@ export function StrategyForm({ onSubmit, loading }: StrategyFormProps) {
             icon={<BarChart3Icon className="h-4 w-4" />}
             className="w-full"
           >
-            {loading ? '回测运行中...' : '开始回测'}
+            {loading ? (multiStrategyMode ? '多策略回测运行中...' : '回测运行中...') : 
+             (multiStrategyMode ? '开始多策略对比' : '开始回测')}
           </Button>
         </Form.Item>
       </Form>

@@ -1,7 +1,7 @@
 'use client';
 
 import React from 'react';
-import { Card, Row, Col, Statistic, Divider } from 'antd';
+import { Card, Row, Col, Statistic } from 'antd';
 import {
   TrendingUpIcon,
   TrendingDownIcon,

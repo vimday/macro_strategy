@@ -4,7 +4,9 @@ import {
   BacktestRequest, 
   BacktestResult, 
   MarketType,
-  ApiResponse 
+  ApiResponse,
+  MultiStrategyBacktestRequest,
+  MultiStrategyBacktestResult
 } from '@/types';
 
 // Create axios instance with default config
@@ -18,7 +20,7 @@ const apiClient = axios.create({
 
 // Response interceptor for handling common response structure
 apiClient.interceptors.response.use(
-  (response: AxiosResponse<ApiResponse<any>>) => {
+  (response: AxiosResponse<ApiResponse<unknown>>) => {
     if (response.data.success) {
       return response;
     } else {
@@ -67,6 +69,21 @@ export const backtestService = {
       return response.data.data;
     } catch (error) {
       console.error('Error fetching backtest result:', error);
+      return null;
+    }
+  },
+
+  async runMultiStrategyBacktest(request: MultiStrategyBacktestRequest): Promise<MultiStrategyBacktestResult> {
+    const response = await apiClient.post<ApiResponse<MultiStrategyBacktestResult>>('/api/v1/backtest/multi', request);
+    return response.data.data;
+  },
+
+  async getMultiStrategyResult(id: string): Promise<MultiStrategyBacktestResult | null> {
+    try {
+      const response = await apiClient.get<ApiResponse<MultiStrategyBacktestResult>>(`/api/v1/backtest/multi/${id}`);
+      return response.data.data;
+    } catch (error) {
+      console.error('Error fetching multi-strategy result:', error);
       return null;
     }
   }

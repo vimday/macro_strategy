@@ -25,7 +25,7 @@ export interface Index {
   currency: Currency;
   description: string;
   trading_hours?: TradingHours;
-  metadata?: Record<string, any>;
+  metadata?: Record<string, unknown>;
 }
 
 // OHLCV data point with enhanced fields
@@ -49,7 +49,7 @@ export interface MarketData {
   asset_class: AssetClass;
   currency: Currency;
   data: OHLCV[];
-  metadata?: Record<string, any>;
+  metadata?: Record<string, unknown>;
   last_update: string;
 }
 
@@ -69,10 +69,10 @@ export interface RiskManagementConfig {
 // Strategy configuration with enhanced flexibility
 export interface StrategyConfig {
   type: StrategyType;
-  parameters: Record<string, any>;
+  parameters: Record<string, unknown>;
   description: string;
   risk_management?: RiskManagementConfig;
-  metadata?: Record<string, any>;
+  metadata?: Record<string, unknown>;
 }
 
 // Monthly rotation strategy parameters
@@ -92,7 +92,7 @@ export interface BacktestRequest {
   benchmark?: string;
   rebalance_freq?: string;
   data_source?: string;
-  metadata?: Record<string, any>;
+  metadata?: Record<string, unknown>;
 }
 
 // Trade record
@@ -157,6 +157,49 @@ export interface BacktestResult {
   duration: number;
 }
 
+// Multi-strategy backtest request
+export interface MultiStrategyBacktestRequest {
+  asset_id: string;
+  strategies: StrategyConfig[];
+  start_date: string;
+  end_date: string;
+  initial_cash: number;
+  benchmark?: string;
+  data_source?: string;
+  comparison_opt?: ComparisonOptions;
+}
+
+// Comparison options
+export interface ComparisonOptions {
+  show_benchmark: boolean;
+  normalize_returns: boolean;
+  show_drawdown: boolean;
+  show_rolling_metrics: boolean;
+  rolling_window: number;
+  metrics: string[];
+}
+
+// Strategy comparison results
+export interface StrategyComparison {
+  metrics_comparison: Record<string, number[]>;
+  rankings: Record<string, number[]>;
+  correlation_matrix: number[][];
+  best_strategy: string;
+  worst_strategy: string;
+  summary: string;
+}
+
+// Multi-strategy backtest result
+export interface MultiStrategyBacktestResult {
+  id: string;
+  request: MultiStrategyBacktestRequest;
+  results: BacktestResult[];
+  comparison: StrategyComparison;
+  benchmark_result?: BacktestResult;
+  created_at: string;
+  duration: number;
+}
+
 // API Response types
 export interface ApiResponse<T> {
   data: T;
@@ -185,11 +228,5 @@ export interface BacktestFormData {
 export interface ChartDataPoint {
   date: string;
   value: number;
-  [key: string]: any;
-}
-
-export interface PerformanceChartData {
-  portfolioValue: ChartDataPoint[];
-  cumulativeReturns: ChartDataPoint[];
-  drawdown: ChartDataPoint[];
+  [key: string]: string | number;
 }
